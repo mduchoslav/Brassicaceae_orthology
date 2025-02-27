@@ -1,0 +1,789 @@
+---
+title: "Functional annotations"
+author: "Milos Duchoslav"
+date: "2024-02-09"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+# InterProScan - direct annotation of the genes of desired species (not A. thaliana orthologues)
+
+Lian, Qichao, Bruno Huettel, Birgit Walkemeier, Baptiste Mayjonade, Céline Lopez-Roques, Lisa Gil, Fabrice Roux, Korbinian Schneeberger, and Raphael Mercier. “A Pan-Genome of 69 Arabidopsis Thaliana Accessions Reveals a Conserved Genome Structure throughout the Global Species Range.” Nature Genetics 56, no. 5 (May 2024): 982–91. https://doi.org/10.1038/s41588-024-01715-9.:
+
+The resulting gene models were further annotated functionally using InterProScan v5.59-91.0 (ref. 109) (parameters: -f TSV -t p -iprlookup -goterms -pa).
+
+## Interproscan download
+
+https://interproscan-docs.readthedocs.io/en/latest/HowToDownload.html
+
+```{sh}
+cd /storage/brno12-cerit/home/duchmil/SW
+
+mkdir InterProScan
+cd InterProScan/
+
+wget https://ftp.ebi.ac.uk/pub/software/unix/iprscan/5/5.72-103.0/interproscan-5.72-103.0-64-bit.tar.gz
+wget https://ftp.ebi.ac.uk/pub/software/unix/iprscan/5/5.72-103.0/interproscan-5.72-103.0-64-bit.tar.gz.md5
+
+# Recommended checksum to confirm the download was successful:
+md5sum -c interproscan-5.72-103.0-64-bit.tar.gz.md5
+# Must return *interproscan-5.72-103.0-64-bit.tar.gz: OK*
+# If not - try downloading the file again as it may be a corrupted copy.
+
+tar -pxvzf interproscan-5.72-103.0-*-bit.tar.gz
+# where:
+#     p = preserve the file permissions
+#     x = extract files from an archive
+#     v = verbosely list the files processed
+#     z = filter the archive through gzip
+#     f = use archive file
+
+cd interproscan-5.72-103.0/
+
+#Index hmm models
+python3 setup.py -f interproscan.properties
+
+# check
+module load openjdk
+./interproscan.sh
+
+# tests
+./interproscan.sh -i test_all_appl.fasta -f tsv -dp
+./interproscan.sh -i test_all_appl.fasta -f tsv
+```
+
+## InterProScan - preparation of input files
+
+```{sh}
+cd /storage/brno12-cerit/home/duchmil/orthofinder/brassicaceae_2/
+mkdir interproscan
+
+cd /storage/brno12-cerit/home/duchmil/orthofinder/brassicaceae_2/interproscan
+
+## Removing asterisks from protein sequences
+
+# Interproscan doesn't like * in protein sequences, even in the end. We have to remove them from theprotein sequences.
+
+# checking for internal stop codons (* in the middle of sequence)
+for file in ../primary_transcripts/*.fasta
+do
+STOPS=$(awk '/^>/ { if(NR>1) print "";  printf("%s\n",$0); next; } { printf("%s",$0);}  END {printf("\n");}' < $file | grep \*[[:alpha:]] | wc -l)
+echo $file $STOPS
+done
+
+# checking for * anywhere
+grep '\*' ../primary_transcripts/Arabidopsis_arenosa.fasta | wc -l # 33901
+
+# check of sed command
+sed -E 's/\*//g' ../primary_transcripts/Noccaea_praecox.fasta | less
+
+## remove all asterisks from protein sequences
+# Note: This will remove also internal stop codons in bad proteins.
+
+mkdir primary_transcripts_without_stops
+
+for file in ../primary_transcripts/*.fasta
+do
+  # get filename without path
+  filename=$(echo $file | sed 's,^.*/,,')
+  
+  # remove all asterisks from lines that do not start with >
+  sed -E 's/\*//g' ../primary_transcripts/$filename > primary_transcripts_without_stops/$filename
+done
+
+
+```
+
+## InterProScan run
+
+```{sh}
+### Metacentrum script
+
+#PBS -N InterProScan_all_species
+#PBS -l select=1:ncpus=8:mem=96gb:scratch_local=200gb
+#PBS -l walltime=24:00:00 
+#PBS -m ae
+
+## It is needed to set the $species variable during submitting the job like this:
+# for species in Alyssum_gmelinii Arabidopsis_arenosa Arabidopsis_lyrata_NCBI Cardamine_glauca Noccaea_praecox
+# do
+# echo "Submitting job for species: $species"
+# qsub  -v "species=$species" InterProScan_all_species.bash
+# done
+
+echo "Species for this job: $species"
+
+# define variables
+query_fasta="/storage/brno12-cerit/home/duchmil/orthofinder/brassicaceae_2/interproscan/primary_transcripts_without_stops/$species.fasta"
+output_dir=/storage/brno12-cerit/home/duchmil/orthofinder/brassicaceae_2/interproscan
+
+# append a line to a file "jobs_info.txt" containing the ID of the job, the hostname of node it is run on and the path to a scratch directory
+# this information helps to find a scratch directory in case the job fails and you need to remove the scratch directory manually 
+echo "$PBS_JOBID is running on node `hostname -f` in a scratch directory $SCRATCHDIR" | ts '[%Y-%m-%d %H:%M:%S]' >> $PBS_O_WORKDIR/jobs_info.txt
+
+# test if scratch directory is set
+# if scratch directory is not set, issue error message and exit
+test -n "$SCRATCHDIR" || { echo >&2 "Variable SCRATCHDIR is not set!"; exit 1; }
+
+# move into scratch directory
+cd $SCRATCHDIR 
+
+# load Java
+module load openjdk
+
+# run InterProScan
+/storage/brno12-cerit/home/duchmil/SW/InterProScan/interproscan-5.72-103.0/interproscan.sh --goterms --pathways --enable-tsv-residue-annot --tempdir $SCRATCHDIR --cpu 8 -i $query_fasta --output-file-base $species
+
+echo "Main calculation done." | ts '[%Y-%m-%d %H:%M:%S]'
+
+# compress output files
+pigz -v -p 8 $species.*
+
+# move the output to user's DATADIR or exit in case of failure
+mkdir -p $output_dir # will make folder if it doesn't exist
+cp -v $species.* $output_dir/ || { echo >&2 "Result file(s) copying failed (with a code $?) !!"; exit 4; }
+
+echo "Copying output file to $output_dir done." | ts '[%Y-%m-%d %H:%M:%S]'
+
+# clean the SCRATCH directory
+clean_scratch
+
+# Resources: 9-10 h, 60-80 % CPU, 57-70 GB memory.
+
+```
+
+### Loop for submitting jobs for several species
+```{sh}
+cd /storage/brno12-cerit/home/duchmil/orthofinder/brassicaceae_2/metacentrum_scripts
+
+# for species in Alyssum_gmelinii Arabidopsis_arenosa Arabidopsis_lyrata_NCBI Cardamine_glauca Noccaea_praecox
+for species in Arabidopsis_lyrata_NCBI Noccaea_praecox
+do
+echo "Submitting job for species: $species"
+qsub  -v "species=$species" InterProScan_all_species.bash
+done
+
+
+```
+
+### Interproscan results
+
+```{sh}
+cd /storage/brno12-cerit/home/duchmil/orthofinder/brassicaceae_2/interproscan
+
+# view beginning as table
+head -n 1000 Arabidopsis_arenosa.tsv | column -t -s $'\t' |  less -S
+
+wc -l Arabidopsis_arenosa.tsv # 313362
+
+cat Arabidopsis_arenosa.tsv | cut -f 1 | sort | uniq | wc -l # 31111 (out of 33901 proteins)
+
+# compress for transfer
+gzip --keep Arabidopsis_arenosa.tsv
+
+# sites
+less -S Arabidopsis_arenosa.tsv.sites
+
+cat Arabidopsis_arenosa.tsv.sites | cut -f 1 | sort | uniq | wc -l # 11261 (out of 33901 proteins)
+```
+#### TSV description
+https://interproscan-docs.readthedocs.io/en/latest/OutputFormats.html
+
+The TSV format presents the match data in columns as follows:
+
+    Protein accession (e.g. P51587)
+
+    Sequence MD5 digest (e.g. 14086411a2cdf1c4cba63020e1622579)
+
+    Sequence length (e.g. 3418)
+
+    Analysis (e.g. Pfam / PRINTS / Gene3D)
+
+    Signature accession (e.g. PF09103 / G3DSA:2.40.50.140)
+
+    Signature description (e.g. BRCA2 repeat profile)
+
+    Start location
+
+    Stop location
+
+    Score - is the e-value (or score) of the match reported by member database method (e.g. 3.1E-52)
+
+    Status - is the status of the match (T: true)
+
+    Date - is the date of the run
+
+    InterPro annotations - accession (e.g. IPR002093)
+
+    InterPro annotations - description (e.g. BRCA2 repeat)
+
+    GO annotations with their source(s), e.g. GO:0005515(InterPro)|GO:0006302(PANTHER)|GO:0007195(InterPro,PANTHER). This is an optional column; only displayed if the --goterms option is switched on
+
+    Pathways annotations, e.g. REACT_71. This is an optional column; only displayed if the --pathways option is switched on
+
+#### Analysis description
+
+                      TIGRFAM (XX.X) : TIGRFAMs are protein families based on hidden Markov models (HMMs).
+                         SFLD (X) : SFLD is a database of protein families based on hidden Markov models (HMMs).
+                  SUPERFAMILY (X.XX) : SUPERFAMILY is a database of structural and functional annotations for all proteins and genomes.
+                      PANTHER (XX.X) : The PANTHER (Protein ANalysis THrough Evolutionary Relationships) Classification System is a unique resource that classifies genes by their functions, using published scientific experimental evidence and evolutionary relationships to predict function even in the absence of direct experimental evidence.
+                       Gene3D (X.X.X) : Structural assignment for whole genes and genomes using the CATH domain structure database.
+                        Hamap (XXXX_XX) : High-quality Automated and Manual Annotation of Microbial Proteomes.
+                  ProSiteProfiles (XXX_XX) : PROSITE consists of documentation entries describing protein domains, families and functional sites as well as associated patterns and profiles to identify them.
+                        Coils (X.X.X) : Prediction of coiled coil regions in proteins.
+                        SMART (X.X) : SMART allows the identification and analysis of domain architectures based on hidden Markov models (HMMs).
+                          CDD (X.XX) : CDD predicts protein domains and families based on a collection of well-annotated multiple sequence alignment models.
+                       PRINTS (XX.X) : A compendium of protein fingerprints - a fingerprint is a group of conserved motifs used to characterise a protein family.
+                        PIRSR (XXXX_XX) : PIRSR is a database of protein families based on hidden Markov models (HMMs) and Site Rules.
+                  ProSitePatterns (XXXX_XX) : PROSITE consists of documentation entries describing protein domains, families and functional sites as well as associated patterns and profiles to identify them.
+                      AntiFam (X.X) : AntiFam is a resource of profile-HMMs designed to identify spurious protein predictions.
+                         Pfam (XX.X) : A large collection of protein families, each represented by multiple sequence alignments and hidden Markov models (HMMs).
+                   MobiDBLite (X.X) : Prediction of intrinsically disordered regions in proteins.
+                        PIRSF (X.XX) : The PIRSF concept is used as a guiding principle to provide comprehensive and non-overlapping clustering of UniProtKB sequences into a hierarchical order to reflect their evolutionary relationships.
+  
+
+# Functional annotations of Arabidopsis thaliana orthologs
+
+```{r}
+# Extracting of gene/protein anotations from several sources
+
+# This script uses list of A. thaliana genes (AGI codes) and extracts various annotations for them.
+# There can be several genes collapsed to one line. In such case, the script collapses also the annotations, if they differ (and can write there the ids for which the annotations apply).
+
+
+setwd("D:/!ecolgen/resources/orthofinder/brassicaceae_2/")
+old.par<-par(no.readonly = T)
+
+
+### FUNKCE
+
+## Funkce k vytahování vlastností genů/proteinů z dalších databází
+# Vytahuje informace pro skupiny genů (oddělené např. ";"). Pokud je informace pro celou skupinu stejná, je uvedena jen ta. Pokud je pro geny ze skupiny různá, uvede výčet a v závorce pro které geny.
+# Funkce je míněna pro použití s funkcí sapply. Vstup do funkce (x) má být jeden textový řetězec (seznam genů uddělených oddělovačem). Pomocí funkce sapply lze použít na vektor takových textových řetězců.
+# Parametry:
+# x - textový řetězec s identifikátory genů oddělenými oddělovačem (viz "split")
+# table - tabulka identifikátorů genů (resp. vektor) s přiřazenými vlastnostmi; pokud zde bude stejný gen vícekrát, nefunguje přiřazování genů k příslušným vlastnostem (gene.details)
+# feature - vlastnosti genů (vektor, data.frame nebo matrix ve stejném pořadí jako "table")
+# split - oddělovač použitý v "x" pro řetězení identifikátorů genů
+# gene.details - TRUE/FALSE - Vyhodit v závorce, pro které geny platí jaká hodnota?
+# collapse - znak, který bude vložen mezi hodnoty v případě více různých vlastností (feature) pro danou skupinu genů
+
+## faster version of function
+
+gene.properties <- function(x, table, feature, split = ", ", gene.details = T, collapse = ", ") {
+  # rozdělit "x" podle "split" a vytáhnout k tomu vlastnosti (table - seznam identifikátorů; feature - vlastnosti přiřazené k identifikátorům)
+  genes <- unlist(strsplit(x, split = split))
+  row.numbers <- sapply(X = genes, FUN = grep, x = table, ignore.case = T)
+  feature.v <- as.matrix(feature)[unlist(row.numbers), , drop = F]
+  if(nrow(feature.v) == 1) {
+    output <- feature.v
+  } else if (nrow(feature.v) == 0) {
+    output <- rep(NA, ncol(as.matrix(feature)))
+  } else {
+    output <- vector(mode = "character", length = ncol(as.matrix(feature)))
+    for(j in 1:ncol(as.matrix(feature))) {
+      feature.ind.v <- feature.v[, j]
+      # Je "feature" u všech genů stejná?
+      feature.identical <- all(feature.ind.v[1] == feature.ind.v)
+      if(is.na(feature.identical)) {
+        output[j] <- NA
+      } else {
+        if(feature.identical) {
+          # v případě, že jsou všechny "feature" stejné, vyhoď tuto hodnotu
+          output[j] <- feature.ind.v[1]
+        } else {
+          # v opačném případě načti ke každé hodnotě příslušné geny a ty vyhoď v závorce za každou hodnotou
+          # (pokud gene.details = T)
+          feature.f <- as.factor(feature.ind.v)
+          if(gene.details) {
+            feature.m <- matrix(nrow = nlevels(feature.f), ncol = 2)
+            feature.m[, 1] <- levels(feature.f)
+            for(i in 1:nlevels(feature.f)) {
+              genes.level <- genes[feature.f == levels(feature.f)[i]]
+              feature.m[i, 2] <- paste(genes.level, collapse = ";")
+            }
+            output[j] <- paste(paste0(feature.m[, 1], " (", feature.m[, 2], ")"), collapse = collapse)
+          }
+          else {
+            # pokud gene.details = F, vyhoď hodnoty bez genů v závorce
+            output[j] <- paste(levels(feature.f), collapse = collapse)
+          }
+        }
+      }
+    }
+  }
+  names(output) <- colnames(feature)
+  return(output)
+}
+
+
+### Function for printing messages with time stamps
+
+# Arguments:
+# ... - Anything that will be pasted after the time stamp.
+# sep - Separator of the arguments printed after the time stamp. Defaults to space.
+
+t.print <- function(..., sep = " ") {
+    print(paste0("[", format(x = Sys.time(), format = "%Y-%m-%d %H:%M:%S"), "] ", paste(..., sep = sep)))
+  }
+```
+
+## Reading common files
+```{r}
+# Read statistics from orthologues
+stats.ortho <- read.table("R_analysis/supplementing_orthologues_stats.tsv", sep = "\t", header = T)
+
+
+## Gene aliases
+# File "gene_aliases_20241001.txt.gz"
+# Downloaded on 2024-12-09 from
+# https://v2.arabidopsis.org/download_files/Subscriber_Data_Releases/TAIR_Data_20240930/gene_aliases_20241001.txt.gz
+# (web page https://v2.arabidopsis.org/download/index-auto.jsp?dir=%2Fdownload_files%2FSubscriber_Data_Releases%2FTAIR_Data_20240930)
+
+aliases <- read.table(file = gzfile("R_analysis/functional_annotation_data/Araport11/gene_aliases_20241001.txt.gz"), header = T, sep = "\t", quote = "", comment.char = "", fill = T)
+summary(aliases)
+dim(aliases)
+
+head(aliases)
+tail(aliases)
+
+# Are the gene IDs unique?
+table(aliases$locus_name)[table(aliases$locus_name)>1] # no
+aliases[aliases$locus_name == "AT1G01040", ]
+
+## there are some special characters that make problems
+# checking converting
+aa <- iconv(aliases$full_name, from = "UTF-8", to = "ASCII", sub = "__AAAA__")
+aa[grep("__AAAA__", aa)]
+# remove special characters
+aliases$full_name <- iconv(aliases$full_name, from = "UTF-8", to = "ASCII", sub = "")
+
+
+## collapsing lines for the same genes
+aliases.agg <- aggregate(x = aliases[, 2:3], by = list(aliases$locus_name), FUN = paste, collapse = ", ")
+colnames(aliases.agg) <- colnames(aliases)
+aliases.agg$full_name <- gsub(pattern = "NULL, |, NULL", replacement = "", x = aliases.agg$full_name)
+
+dim(aliases)
+dim(aliases.agg)
+
+
+## Subcellular predictions
+# File "Araport11-Subcellular_Predictions_version_2024_03_09.txt"
+# Downloaded on 2024-12-09 from https://www.arabidopsis.org/download/list?dir=Genes%2FAraport11_genome_release
+
+subcell <- read.table(file = "R_analysis/functional_annotation_data/Araport11/Araport11-Subcellular_Predictions_version_2024_03_09.txt", header = F, sep = "\t")
+summary(subcell)
+colnames(subcell) <- c("gene", "subcellular.prediction")
+
+# Are the gene IDs unique?
+table(subcell$gene)[table(subcell$gene)>1] # yes
+
+
+## Functional descriptions from arabidopsis.org
+# File "Araport11_functional_descriptions_20241001.txt.gz"
+# Downloaded on 2024-12-09 from
+# https://v2.arabidopsis.org/download_files/Subscriber_Data_Releases/TAIR_Data_20240930/Araport11_functional_descriptions_20241001.txt.gz 
+# (web page https://v2.arabidopsis.org/download/index-auto.jsp?dir=%2Fdownload_files%2FSubscriber_Data_Releases%2FTAIR_Data_20240930)
+
+fun.desc <- read.table(file = gzfile("R_analysis/functional_annotation_data/Araport11/Araport11_functional_descriptions_20241001.txt.gz"), header = T, sep = "\t", quote = "", comment.char = "")
+summary(fun.desc)
+# Missing values are sometimes "NULL" and sometimes missing.
+colSums(fun.desc == "")
+colSums(fun.desc == "NULL")
+# Making all missing values NULL
+fun.desc[fun.desc == ""] <- "NULL"
+
+# Are the gene IDs unique?
+table(fun.desc$name)[table(fun.desc$name)>1] # yes
+
+
+## Metabolic pathways
+# File "aracyc_pathways.20230103"
+# Downloaded on 2024-12-09 from
+# https://plantcyc-ftp.storage.googleapis.com/pmn/Pathways/Data_dumps/PMN15.5_January2023/pathways/aracyc_pathways.20230103
+# (web page https://plantcyc.org/)
+plantcyc <- read.table("R_analysis/functional_annotation_data/PlantCyc/aracyc_pathways.20230103", header = T, sep = "\t", quote = "", comment.char = "")
+colnames(plantcyc)
+head(plantcyc)
+# Are the gene IDs unique?
+table(plantcyc$Gene.id) # no
+
+## collapsing lines for the same genes
+plantcyc.agg <- aggregate(x = plantcyc, by = list(plantcyc$Gene.id), FUN = function(x) {paste(unique(x), collapse = ", ")})[, -1]
+
+
+## Annotations from Uniprot
+# File "uniprotkb_proteome_up000006548_2024_12_12.tsv"
+# Downloaded on 2024-12-12 from https://www.uniprot.org/uniprot/?query=proteome%3Aup000006548.
+# I selected the desired columns for view and then downloaded that as a table.
+
+uniprot.1 <- read.table("R_analysis/functional_annotation_data/Uniprot/uniprotkb_proteome_up000006548_2024_12_12.tsv", header = T, sep = "\t", quote = "", comment.char = "")
+summary(uniprot.1)
+head(uniprot.1)
+
+# Some proteins are annotated by several gene IDs. However, that should not be problem as the gene IDs are searched by grep.
+uniprot.1$Gene.Names..ordered.locus.[nchar(uniprot.1$Gene.Names..ordered.locus.) > 9][1:100]
+
+
+
+```
+
+
+
+## Big loop
+
+```{r}
+# read species names
+interpro.files <- list.files(path = "interproscan/", pattern = ".tsv.gz")
+species <- sub(pattern = ".tsv.gz", replacement = "", x = interpro.files, fixed = T)
+# species <- species[-1]
+
+# chosen species for testing of the loop
+one.species <- "Alyssum_gmelinii"
+
+
+
+
+### Start of the big loop
+
+for(one.species in species) {
+  
+  t.print("Starting processing species", one.species)
+  
+  ## List of genes (AGI codes; there can be multiple genes per line separated by e.g. ";")
+  
+  # data (gene numbers)
+  genes.pre0 <- read.table(file = paste0("R_analysis/", one.species, "__v__Arabidopsis_thaliana_supplemented.tsv"), sep = "\t", header = T)
+  
+  genes <- genes.pre0[, 1:2]
+  genes$ids <- genes$Arabidopsis_thaliana
+  head(genes)
+  
+  ## 1a. Short version of gene IDs
+  short.ids.pre1 <- gsub(pattern = "\\.\\d", replacement = "", x = genes$ids)
+  short.ids.pre2 <- strsplit(short.ids.pre1, split = ", ")
+  short.ids.l <- lapply(X = short.ids.pre2, FUN = unique)
+  short.ids <- sapply(X = short.ids.l, FUN = paste, collapse = ", ")
+  short.ids[short.ids == "NA"] <- NA
+  
+  genes$short.ids <- short.ids
+  
+  
+  ## Gene aliases
+  t.print("Extracting gene aliases for", one.species)
+  
+  # extraction of gene properties by the function gene.properties
+  extr.aliases <- t(sapply(X = short.ids, FUN = gene.properties, table = aliases.agg$locus_name, 
+                           feature = aliases.agg[, 2:3], gene.details = T, USE.NAMES = F))
+  
+  
+  ## Subcellular predictions
+  t.print("Extracting subcellular predictions for", one.species)
+  
+  # extraction of gene properties by the function gene.properties
+  extr.subcell <- sapply(X = genes$ids, FUN = gene.properties, table = subcell[, 1], feature = subcell[, 2], USE.NAMES = F)
+  
+  
+  ## Functional descriptions from arabidopsis.org
+    t.print("Extracting functional descriptions from arabidopsis.org for", one.species)
+    
+  # extraction of gene properties by the function gene.properties
+  extr.fun.desc <- t(sapply(X = genes$ids, FUN = gene.properties, table = fun.desc$name, feature = fun.desc[, 2:5], USE.NAMES = F))
+  
+  
+  ## Metabolic pathways
+  t.print("Extracting metabolic pathways for", one.species)
+  
+  # extracting pathways
+  pathway <- sapply(X = short.ids, FUN = gene.properties, 
+                    table = plantcyc.agg$Gene.id, feature = plantcyc.agg$Pathway.name, gene.details = T, collapse = ", ", 
+                    USE.NAMES = F)
+  
+  
+  ## Annotations from Uniprot
+  t.print("Extracting annotations from Uniprot for", one.species)
+  
+  # extraction of gene properties by the function gene.properties
+  system.time(
+    uniprot.1.matched <- t(sapply(X = short.ids, FUN = gene.properties, 
+                                  table = uniprot.1$Gene.Names..ordered.locus., 
+                                  feature = uniprot.1, gene.details = F, collapse = ";", 
+                                  USE.NAMES = F))
+  )
+  # It can take an hour, would be good to somehow optimize.
+  
+  
+  ## cleaning the matched Uniprot table
+  
+  uniprot.1.matched.b <- uniprot.1.matched
+  # for each column
+  for(i in 1:ncol(uniprot.1.matched.b)) {
+    used.col <- uniprot.1.matched.b[, i]
+    # remove ; at line starts and ends
+    used.col <- sub(pattern = "^;|;$", replacement = "", x = used.col)
+    # remove double ;;
+    used.col <- sub(pattern = ";;", replacement = ";", x = used.col)
+    # save the column back
+    uniprot.1.matched.b[, i] <- used.col
+  }
+  
+  ## make the Uniprot GO terms and similar columns unique for each protein of original species
+  # (removing duplicates in one cell)
+  
+  # for each column
+  # some columns like "Cofactor" use ; in other way, it is better not to include them
+  for(i in c(17:27, 31:ncol(uniprot.1.matched.b))) {
+    used.col <- uniprot.1.matched.b[, i]
+    # remove ; at line starts and ends
+    used.col <- sub(pattern = "^;|;$", replacement = "", x = used.col)
+    # each string split by ;, make the items unique and then again collapse them to one string
+    used.col <- sapply(X = used.col, FUN = function(x) {
+      paste(unique(unlist(strsplit(x = x, split = ";"))), collapse = ";")
+    })
+    
+    uniprot.1.matched.b[, i] <- used.col
+  }
+  
+  ## remove unnecessary Uniprot columns
+  # colnames(uniprot.1.matched.b)
+  # columns to remove
+  cols.rem <- c("Gene.Names..ORF.", 
+                "Organism",
+                "Reactome",
+                "PlantReactome",
+                "AlphaFoldDB",
+                "KEGG",
+                "TAIR",
+                "Araport"
+  )
+  
+  uniprot.1.matched.c <- uniprot.1.matched.b[, !colnames(uniprot.1.matched.b) %in% cols.rem]
+  
+  
+  ## Adding link to TAIR and Thalemine
+  
+  # examples:
+  # https://bar.utoronto.ca/thalemine/gene:AT1G31690
+  # http://www.arabidopsis.org/servlets/TairObject?name=AT1G06550&type=locus
+  
+  thalemine.link <- mapply(FUN = paste0, "https://bar.utoronto.ca/thalemine/gene:", short.ids.l, MoreArgs = list(collapse = "; "))
+  # remove in the rows with NA
+  thalemine.link[is.na(short.ids)] <- NA
+  
+  tair.link <- mapply(FUN = paste0, "http://www.arabidopsis.org/servlets/TairObject?name=", short.ids.l, "&type=locus", MoreArgs = list(collapse = "; "))
+  tair.link[is.na(short.ids)] <- NA
+  
+  
+  ## Completition of the table of annotations
+  
+  annotations.1 <- cbind(genes.pre0, extr.aliases, extr.subcell, extr.fun.desc, pathway, uniprot.1.matched.c, thalemine.link, tair.link)
+  colnames(annotations.1)[colnames(annotations.1) == "extr.subcell"] <- "subcellular.prediction"
+  
+  # renaming columns (to reflect source)
+  colnames(annotations.1)[4:8] <- paste0("OrthoFinder_", colnames(annotations.1)[4:8])
+  colnames(annotations.1)[31:37] <- paste0("TAIR_", colnames(annotations.1)[31:37])
+  colnames(annotations.1)[38] <- paste0("PlantCyc_", colnames(annotations.1)[38])
+  colnames(annotations.1)[39:69] <- paste0("UniProt_", colnames(annotations.1)[39:69])
+  
+  
+  
+  ### InterproScan annotation of the original genes (not A. thaliana orthologues)
+  
+  t.print("Extracting InterproScan annotation for", one.species)
+  
+  # read gzipped table
+  interpro <- read.table(file = gzfile(paste0("interproscan/", one.species, ".tsv.gz")), header = F, sep = "\t", quote = "", comment.char = "")
+  
+  colnames(interpro) <- c("protein", "md5", "length", "analysis", "signature_accession", 
+                          "signature_description", "start", "stop", "score", "status", "run_date", 
+                          "interpro_accession", "interpro_description", "GO_term", "pathways")
+  
+  # ## checks
+  # 
+  # # how many genes will be added?
+  # intepro.genes.uniq <- unique(interpro[, 1])
+  # length(intepro.genes.uniq)
+  # intepro.genes.new <- intepro.genes.uniq[! intepro.genes.uniq %in% annotations.1[, one.species]]
+  # length(intepro.genes.new)
+  # 
+  # interpro.new <- interpro[interpro[, 1] %in% intepro.genes.new, ]
+  
+  # list of tools used by InterProScan
+  tools.interpro <- sort(unique(interpro$analysis))
+  
+  # # How many rows and how many different values are there for each tool?
+  # for(i in tools.interpro) {
+  #   num.lines <- sum(interpro$analysis == i)
+  #   num.annot.prot <- length(unique(interpro$protein[interpro$analysis == i]))
+  #   nlev.tool <-  nlevels(as.factor(interpro$signature_accession[interpro$analysis == i]))
+  #   print(paste(i, "tool - records:", num.lines, "annotated proteins:", num.annot.prot, "levels:", nlev.tool))
+  # }
+  # 
+  # interpro[interpro$analysis == "AntiFam", ][1:10, ]
+  
+  ## making the interpro table wide (tools as separate columns)
+  # prepare the dataframe
+  wide.interpro <- data.frame(protein = unique(interpro[, 1]))
+  # loop through the tools
+  for(i in tools.interpro) {
+    # extract rows for the tool
+    extr.interpro <- interpro[interpro$analysis == i, ]
+    # paste together description, accession and region
+    extr.interpro.v <- paste0(extr.interpro$signature_description, " (", extr.interpro$signature_accession,
+                              "|", extr.interpro$start, "-", extr.interpro$stop, ")")
+    # aggregate if there are several rows for one protein
+    extr.interpro.agg <- aggregate(x = extr.interpro.v, by = list(extr.interpro$protein), FUN = paste, collapse = "; ")
+    # extr.interpro.v[1:20]
+    # extr.interpro.agg[1:20, ]
+    
+    # add as a new column
+    wide.interpro[match(x = extr.interpro.agg[, 1], table = wide.interpro$protein), 
+                  which(tools.interpro == i) + 1] <- extr.interpro.agg[, 2]
+    # rename the column
+    colnames(wide.interpro)[which(tools.interpro == i) + 1] <- paste0("InterProScan_", i)
+    
+  }
+  
+  
+  ## add interpro accession and description
+  
+  # extract rows with information
+  extr.interpro <- interpro[interpro$interpro_accession != "-", ]
+  # paste together description, accession and region
+  extr.interpro.v <- paste0(extr.interpro$interpro_description, " (", extr.interpro$interpro_accession,
+                            "|", extr.interpro$start, "-", extr.interpro$stop, ")")
+  # extr.interpro.v[1:30]
+  # aggregate if there are several rows for one protein
+  extr.interpro.agg <- aggregate(x = extr.interpro.v, by = list(extr.interpro$protein), FUN = paste, collapse = "; ")
+  # add as a new column
+  wide.interpro$InterProScan_interpro[match(x = extr.interpro.agg[, 1], table = wide.interpro$protein)] <- extr.interpro.agg[, 2]
+  
+  
+  ## add GO terms
+  
+  # extract rows with information
+  extr.interpro <- interpro[interpro$GO_term != "-", ]
+  # remove origin of GO term in parentheses
+  extr.interpro.v <- gsub(pattern = "\\([[:alpha:]]*\\)", replacement = "", x = extr.interpro$GO_term)
+  # extr.interpro.v[1:30]
+  # aggregate if there are several rows for one protein (don't repeat the same GO terms)
+  extr.interpro.agg <- aggregate(x = extr.interpro.v, by = list(extr.interpro$protein), FUN = paste, collapse = "|")
+  # each string split by |, make the items unique and then again collapse them to one string
+  extr.interpro.agg$uniq <- sapply(X = extr.interpro.agg[, 2], FUN = function(x) {
+    paste(unique(unlist(strsplit(x = x, split = "|", fixed = T))), collapse = "; ")
+  })
+  # add as a new column
+  wide.interpro$InterProScan_GO_term[match(x = extr.interpro.agg[, 1], table = wide.interpro$protein)] <- extr.interpro.agg$uniq
+  
+  
+  ## adding Pathways
+  
+  # extract rows with information
+  extr.interpro <- interpro[interpro$pathways != "-", ]
+  extr.interpro.v <- extr.interpro$pathways
+  # extr.interpro.v[1:3]
+  # aggregate if there are several rows for one protein (don't repeat the same GO terms)
+  extr.interpro.agg <- aggregate(x = extr.interpro.v, by = list(extr.interpro$protein), FUN = paste, collapse = "|")
+  # extr.interpro.agg[1:3, ]
+  # each string split by |, make the items unique and then again collapse them to one string
+  extr.interpro.agg$uniq <- sapply(X = extr.interpro.agg[, 2], FUN = function(x) {
+    paste(unique(unlist(strsplit(x = x, split = "|", fixed = T))), collapse = "; ")
+  })
+  # extr.interpro.agg[1:3, ]
+  # add as a new column
+  wide.interpro$InterProScan_pathways[match(x = extr.interpro.agg[, 1], table = wide.interpro$protein)] <- extr.interpro.agg$uniq
+  
+  
+  ## Integrating with annotations from A. thaliana
+  
+  annotations.2 <- merge(x = annotations.1, y = wide.interpro, by.x = one.species, by.y = "protein", all = T)
+  
+  # View(annotations.2[1:30, c("UniProt_Gene.Ontology.IDs", "InterProScan_GO_term")])
+  
+  ## Integrate A. thaliana (Uniprot) and InterProScan GO terms
+  
+  GO_term_IDs <- paste(annotations.2$"UniProt_Gene.Ontology.IDs", annotations.2$"InterProScan_GO_term", sep = "; ")
+  # GO_term_IDs[1:10]
+  
+  # remove NAs
+  GO_term_IDs.2 <- gsub(pattern = "NA", replacement = "", x = GO_term_IDs)
+  # GO_term_IDs.2[1:20]
+  
+  # remove unnecessary "; "
+  GO_term_IDs.3 <- gsub(pattern = "^; |; $", replacement = "", x = GO_term_IDs.2)
+  # GO_term_IDs.3[1:10]
+  
+  # each string split by "; ", make the items unique and then again collapse them to one string
+  GO_term_IDs.uniq <- sapply(X = GO_term_IDs.3, FUN = function(x) {
+    paste(unique(unlist(strsplit(x = x, split = "; ", fixed = T))), collapse = "; ")
+  })
+  
+  annotations.2$GO_term_IDs <- GO_term_IDs.uniq
+  
+  # annotations.2$GO_term_IDs[1:10]
+  
+  
+  ## reorder columns
+  
+  # colnames(annotations.2)
+  annotations.3 <- annotations.2[, c(1:3, ncol(annotations.2), 4:(ncol(annotations.2)-1))]
+  # colnames(annotations.3)
+  # colnames(annotations.3) != "InterProScan_pathways"
+  
+  
+  ### Exporting tables
+  
+  t.print("Exporting tables for", one.species)
+  
+  ## export full table without pathways (pathways are too big)
+  
+  write.table(x = annotations.3[, colnames(annotations.3) != "InterProScan_pathways"], 
+              file = paste0("R_analysis/", one.species, "_At_orthologues_and_functional_annotations.tsv"),
+              sep = "\t", row.names = F, na = "", quote = F)
+  
+  # gzipped table
+  write.table(x = annotations.3[, colnames(annotations.3) != "InterProScan_pathways"], 
+              file = gzfile(paste0("R_analysis/", one.species, "_At_orthologues_and_functional_annotations.tsv.gz")), 
+              sep = "\t", row.names = F, na = "", quote = F)
+  
+  # export pathways
+  write.table(x = annotations.3[, c(one.species, "InterProScan_pathways")], 
+              file = gzfile(paste0("R_analysis/", one.species, "_At_orthologues_and_InterProScan_pathways.tsv.gz")), 
+              sep = "\t", row.names = F, na = "", quote = F)
+  
+  # write RDS
+  saveRDS(object = annotations.3, 
+          file = paste0("R_analysis/", one.species, "_At_orthologues_and_functional_annotations_full.rds"))
+  
+  
+  ## export main columns only
+  write.table(x = annotations.3[, c(1:4, 42)], 
+              file = paste0("R_analysis/", one.species, "_At_orthologues_and_functional_annotations_shortened.tsv"),
+              sep = "\t", row.names = F, na = "", quote = F)
+  
+  t.print(one.species, "finished.")
+}
+### End of the big loop
+
+```
+
+
+
+
+
+Checks of the numbers
+```{r}
+annotations.3 <- readRDS(file = "R_analysis/Alyssum_gmelinii_At_orthologues_and_functional_annotations_full.rds")
+
+dim(annotations.3)
+sum(!is.na(annotations.3$Arabidopsis_thaliana))
+sum(!is.na(annotations.3$single_Arabidopsis_thaliana))
+
+```
+
+
+
+
+
