@@ -1,0 +1,11 @@
+"legend"	"Alyssum_gmelinii"	"Arabidopsis_arenosa"	"Arabidopsis_lyrata_NCBI"	"Cardamine_glauca"	"Noccaea_praecox"
+"A: OrthoFinder orthologues"	22798	24322	25166	21324	21545
+"B: BLAST Reciprocal Best Hits"	15836	21305	22688	18481	17506
+"A + B"	23353	24618	25420	21672	22124
+"C: Shared N0 hierarchical orthogroups"	24008	26334	26677	22175	22686
+"A + B + C"	24883	26573	26829	22478	23271
+"D: Shared Orthogroups"	26103	27387	27438	22999	24308
+"A + B + C + D"	26115	27446	27467	23003	24318
+"E: BLAST hits (pident > 40, qcovhsp > 50)"	28133	28209	27988	23264	25360
+"A + B + C + D + E"	29266	29459	28558	23676	26298
+"Genes with multiple orthologues/homologues"	3530	2485	2076	1851	2460
