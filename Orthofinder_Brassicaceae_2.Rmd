@@ -17,64 +17,67 @@ knitr::opts_chunk$set(eval = FALSE)
 
 # Orthofinder Brassicaceae 2
 
-This is run *Brassicaceae 2*. Compared to run *Brassicaceae 1*, I added two species, whose genomes we recently assembled:
-- *Cardamine glauca*
+This is run *Brassicaceae 2*. Compared to run *Brassicaceae 1*, I added two species, whose genomes we recently assembled:  
+- *Cardamine glauca*  
 - *Noccaea praecox*
 
 ## Species included in this Orthofinder run
 
 1. *Alyssum gmelinii*
-  - Celestini, Sonia, Miloš Duchoslav, Mahnaz Nezamivand-Chegini, Jörn Gerchen, Gabriela Šrámková, Raúl Wijfjes, Anna Krejčová, et al. “Genomic Basis of Adaptation to Serpentine Soil in Two Alyssum Species Shows Convergence with Arabidopsis across 20 Million Years of Divergence.” bioRxiv, February 28, 2025. <https://doi.org/10.1101/2025.02.27.640498>.
+	- Celestini, Sonia, Miloš Duchoslav, Mahnaz Nezamivand-Chegini, Jörn Gerchen, Gabriela Šrámková, Raúl Wijfjes, Anna Krejčová, et al. “Genomic Basis of Adaptation to Serpentine Soil in Two Alyssum Species Shows Convergence with Arabidopsis across 20 Million Years of Divergence.” bioRxiv, February 28, 2025. <https://doi.org/10.1101/2025.02.27.640498>.
 2. *Arabidopsis arenosa*
-  - Bramsiepe, Jonathan, Anders K. Krabberød, Katrine N. Bjerkan, Renate M. Alling, Ida M. Johannessen, Karina S. Hornslien, Jason R. Miller, Anne K. Brysting, and Paul E. Grini. “Structural Evidence for MADS-Box Type I Family Expansion Seen in New Assemblies of Arabidopsis Arenosa and A. Lyrata.” The Plant Journal 116, no. 3 (2023): 942–61. <https://doi.org/10.1111/tpj.16401>.
+	- Bramsiepe, Jonathan, Anders K. Krabberød, Katrine N. Bjerkan, Renate M. Alling, Ida M. Johannessen, Karina S. Hornslien, Jason R. Miller, Anne K. Brysting, and Paul E. Grini. “Structural Evidence for MADS-Box Type I Family Expansion Seen in New Assemblies of Arabidopsis Arenosa and A. Lyrata.” The Plant Journal 116, no. 3 (2023): 942–61. <https://doi.org/10.1111/tpj.16401>.
 3. *Arabidopsis lyrata* NCBI
-  - Genome from Hu, Tina T., Pedro Pattyn, Erica G. Bakker, Jun Cao, Jan-Fang Cheng, Richard M. Clark, Noah Fahlgren, et al. “The Arabidopsis Lyrata Genome Sequence and the Basis of Rapid Genome Size Change.” Nature Genetics 43, no. 5 (May 2011): 476–81. <https://doi.org/10.1038/ng.807>.
-  - Annotation from The NCBI Eukaryotic Genome Annotation Pipeline
-  - [GCF_000004255.2](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000004255.2/)
+	- Genome from Hu, Tina T., Pedro Pattyn, Erica G. Bakker, Jun Cao, Jan-Fang Cheng, Richard M. Clark, Noah Fahlgren, et al. “The Arabidopsis Lyrata Genome Sequence and the Basis of Rapid Genome Size Change.” Nature Genetics 43, no. 5 (May 2011): 476–81. <https://doi.org/10.1038/ng.807>.
+	- Annotation from The NCBI Eukaryotic Genome Annotation Pipeline
+	- [GCF_000004255.2](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000004255.2/)
 4. *Arabidopsis lyrata* Rawat
-  - Genome from Hu, Tina T., Pedro Pattyn, Erica G. Bakker, Jun Cao, Jan-Fang Cheng, Richard M. Clark, Noah Fahlgren, et al. “The Arabidopsis Lyrata Genome Sequence and the Basis of Rapid Genome Size Change.” Nature Genetics 43, no. 5 (May 2011): 476–81. <https://doi.org/10.1038/ng.807>.
-  - Annotation from Rawat, Vimal, Ahmed Abdelsamad, Björn Pietzenuk, Danelle K. Seymour, Daniel Koenig, Detlef Weigel, Ales Pecinka, and Korbinian Schneeberger. “Improving the Annotation of Arabidopsis Lyrata Using RNA-Seq Data.” PLOS ONE 10, no. 9 (September 18, 2015): e0137391. <https://doi.org/10.1371/journal.pone.0137391>.
+	- Genome from Hu, Tina T., Pedro Pattyn, Erica G. Bakker, Jun Cao, Jan-Fang Cheng, Richard M. Clark, Noah Fahlgren, et al. “The Arabidopsis Lyrata Genome Sequence and the Basis of Rapid Genome Size Change.” Nature Genetics 43, no. 5 (May 2011): 476–81. <https://doi.org/10.1038/ng.807>.
+	- Annotation from Rawat, Vimal, Ahmed Abdelsamad, Björn Pietzenuk, Danelle K. Seymour, Daniel Koenig, Detlef Weigel, Ales Pecinka, and Korbinian Schneeberger. “Improving the Annotation of Arabidopsis Lyrata Using RNA-Seq Data.” PLOS ONE 10, no. 9 (September 18, 2015): e0137391. <https://doi.org/10.1371/journal.pone.0137391>.
 5. *Arabidopsis thaliana*
-  - Araport11 protein sequences (version 2022-09-14) downloaded from [arabidopsis.org](https://www.arabidopsis.org/download/file?path=Proteins/Araport11_protein_lists/archived/Araport11_pep_20220914_representative_gene_model.gz)
+	- Araport11 protein sequences (version 2022-09-14) downloaded from [arabidopsis.org](https://www.arabidopsis.org/download/file?path=Proteins/Araport11_protein_lists/archived/Araport11_pep_20220914_representative_gene_model.gz)
 6. *Arabis alpina*
-  - Jiao, Wen-Biao, Gonzalo Garcia Accinelli, Benjamin Hartwig, Christiane Kiefer, David Baker, Edouard Severing, Eva-Maria Willing, et al. “Improving and Correcting the Contiguity of Long-Read Genome Assemblies of Three Plant Species Using Optical Mapping and Chromosome Conformation Capture Data.” Genome Research 27, no. 5 (May 1, 2017): 778–86. <https://doi.org/10.1101/gr.213652.116>.
-  - Data: <http://www.arabis-alpina.org/refseq.html>, I used the version 5.1 of the genome (later than Jiao et al. 2017)
+	- Jiao, Wen-Biao, Gonzalo Garcia Accinelli, Benjamin Hartwig, Christiane Kiefer, David Baker, Edouard Severing, Eva-Maria Willing, et al. “Improving and Correcting the Contiguity of Long-Read Genome Assemblies of Three Plant Species Using Optical Mapping and Chromosome Conformation Capture Data.” Genome Research 27, no. 5 (May 1, 2017): 778–86. <https://doi.org/10.1101/gr.213652.116>.
+	- Data: <http://www.arabis-alpina.org/refseq.html>, I used the version 5.1 of the genome (later than Jiao et al. 2017)
 7. *Brassica oleracea*
-  - Annotation from The NCBI Eukaryotic Genome Annotation Pipeline
-  - [GCF_000695525.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000695525.1/)
+	- Annotation from The NCBI Eukaryotic Genome Annotation Pipeline
+	- [GCF_000695525.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000695525.1/)
 8. *Brassica rapa*
-  - Annotation from The NCBI Eukaryotic Genome Annotation Pipeline
-  - [GCF_000309985.2](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000309985.2/)
+	- Annotation from The NCBI Eukaryotic Genome Annotation Pipeline
+	- [GCF_000309985.2](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000309985.2/)
 9. *Camelina sativa*
-  - Annotation from The NCBI Eukaryotic Genome Annotation Pipeline
-  - [GCF_000633955.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000633955.1/)
+	- Annotation from The NCBI Eukaryotic Genome Annotation Pipeline
+	- [GCF_000633955.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000633955.1/)
 10. *Capsella rubella*
-  - Annotation from The NCBI Eukaryotic Genome Annotation Pipeline
-  - [GCF_000375325.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000375325.1/)
+	- Annotation from The NCBI Eukaryotic Genome Annotation Pipeline
+	- [GCF_000375325.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000375325.1/)
 11. *Cardamine glauca*
-  - Nezamivand-Chegini Mahnaz, Duchoslav Miloš, ..., Kolar Filip 2025 (to be published)
+	- Nezamivand-Chegini Mahnaz, Duchoslav Miloš, ..., Kolar Filip 2025 (to be published)
 12. *Cardamine hirsuta*
-  - Gan, Xiangchao, Angela Hay, Michiel Kwantes, Georg Haberer, Asis Hallab, Raffaele Dello Ioio, Hugo Hofhuis, et al. “The Cardamine Hirsuta Genome Offers Insight into the Evolution of Morphological Diversity.” Nature Plants 2, no. 11 (October 31, 2016): 1–7. <https://doi.org/10.1038/nplants.2016.167>.
-  - Data: <http://chi.mpipz.mpg.de/assembly.html>
+	- Gan, Xiangchao, Angela Hay, Michiel Kwantes, Georg Haberer, Asis Hallab, Raffaele Dello Ioio, Hugo Hofhuis, et al. “The Cardamine Hirsuta Genome Offers Insight into the Evolution of Morphological Diversity.” Nature Plants 2, no. 11 (October 31, 2016): 1–7. <https://doi.org/10.1038/nplants.2016.167>.
+	- Data: <http://chi.mpipz.mpg.de/assembly.html>
 13. *Cochlearia excelsa*
-  - Bray, Sian M., Tuomas Hämälä, Min Zhou, Silvia Busoms, Sina Fischer, Stuart D. Desjardins, Terezie Mandáková, et al. “Kinetochore and Ionomic Adaptation to Whole-Genome Duplication in Cochlearia Shows Evolutionary Convergence in Three Autopolyploids.” Cell Reports 43, no. 8 (August 27, 2024). <https://doi.org/10.1016/j.celrep.2024.114576>.
-  - Data: <https://doi.org/10.5061/dryad.ncjsxkt1s>
+	- Bray, Sian M., Tuomas Hämälä, Min Zhou, Silvia Busoms, Sina Fischer, Stuart D. Desjardins, Terezie Mandáková, et al. “Kinetochore and Ionomic Adaptation to Whole-Genome Duplication in Cochlearia Shows Evolutionary Convergence in Three Autopolyploids.” Cell Reports 43, no. 8 (August 27, 2024). <https://doi.org/10.1016/j.celrep.2024.114576>.
+	- Data: <https://doi.org/10.5061/dryad.ncjsxkt1s>
 14. *Conringia planisiliqua*
-  - Jiao, Wen-Biao, Gonzalo Garcia Accinelli, Benjamin Hartwig, Christiane Kiefer, David Baker, Edouard Severing, Eva-Maria Willing, et al. “Improving and Correcting the Contiguity of Long-Read Genome Assemblies of Three Plant Species Using Optical Mapping and Chromosome Conformation Capture Data.” Genome Research 27, no. 5 (May 1, 2017): 778–86. <https://doi.org/10.1101/gr.213652.116>.
+	- Jiao, Wen-Biao, Gonzalo Garcia Accinelli, Benjamin Hartwig, Christiane Kiefer, David Baker, Edouard Severing, Eva-Maria Willing, et al. “Improving and Correcting the Contiguity of Long-Read Genome Assemblies of Three Plant Species Using Optical Mapping and Chromosome Conformation Capture Data.” Genome Research 27, no. 5 (May 1, 2017): 778–86. <https://doi.org/10.1101/gr.213652.116>.
 15. *Euclidium syriacum*
-  - Jiao, Wen-Biao, Gonzalo Garcia Accinelli, Benjamin Hartwig, Christiane Kiefer, David Baker, Edouard Severing, Eva-Maria Willing, et al. “Improving and Correcting the Contiguity of Long-Read Genome Assemblies of Three Plant Species Using Optical Mapping and Chromosome Conformation Capture Data.” Genome Research 27, no. 5 (May 1, 2017): 778–86. <https://doi.org/10.1101/gr.213652.116>.
+	- Jiao, Wen-Biao, Gonzalo Garcia Accinelli, Benjamin Hartwig, Christiane Kiefer, David Baker, Edouard Severing, Eva-Maria Willing, et al. “Improving and Correcting the Contiguity of Long-Read Genome Assemblies of Three Plant Species Using Optical Mapping and Chromosome Conformation Capture Data.” Genome Research 27, no. 5 (May 1, 2017): 778–86. <https://doi.org/10.1101/gr.213652.116>.
 16. *Eutrema salsugineum*
-  - Annotation from The NCBI Eukaryotic Genome Annotation Pipeline
-  - [GCF_000478725.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000478725.1/)
+	- Annotation from The NCBI Eukaryotic Genome Annotation Pipeline
+	- [GCF_000478725.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000478725.1/)
 17. *Noccaea praecox*
-  - Nezamivand-Chegini Mahnaz, Duchoslav Miloš, ..., Kolar Filip 2025 (to be published)
+	- Nezamivand-Chegini Mahnaz, Duchoslav Miloš, ..., Kolar Filip 2025 (to be published)
 18. *Raphanus sativus*
-  - Annotation from The NCBI Eukaryotic Genome Annotation Pipeline
-  - [GCF_000801105.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000801105.1/)
+	- Annotation from The NCBI Eukaryotic Genome Annotation Pipeline
+	- [GCF_000801105.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000801105.1/)
 19. *Rorippa islandica*
-  - <https://phytozome-next.jgi.doe.gov/info/Rislandica_v1_1>
+	- <https://phytozome-next.jgi.doe.gov/info/Rislandica_v1_1>
 
 # Preparation of protein sequences - Brassicaceae 1
+
+Here I descrie the preparation of the data for the first run, then in th next section I add the data for the second run.
+
 ### Folders etc.
 ```{sh}
 cd /storage/brno12-cerit/home/duchmil/orthofinder
@@ -617,7 +620,7 @@ cp -v primary_transcripts/*.fasta ../primary_transcripts/
 
 ## brassicaceae_2 run
 
-18 species, 19 input files (two different annotations for Arabidopsis_lyrata)
+18 species, 19 input files (two different annotations for Arabidopsis_lyrata)  
 Input fasta files:
 
 Alyssum_gmelinii.fasta
@@ -639,6 +642,7 @@ Eutrema_salsugineum.fasta
 Noccaea_praecox.fasta
 Raphanus_sativus.fasta
 Rorippa_islandica.fasta
+
 ```{bash}
 ### Metacentrum script
 
