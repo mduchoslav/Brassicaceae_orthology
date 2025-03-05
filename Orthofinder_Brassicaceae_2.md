@@ -1,82 +1,186 @@
----
-title: "Orthofinder - Brassicaceae"
-author: "Milos Duchoslav"
-date: "2025-01-01"
-output:
-  github_document:
-    toc: true
-    toc_depth: 2
-editor_options: 
-  chunk_output_type: console
----
+Orthofinder - Brassicaceae
+================
+Milos Duchoslav
+2025-01-01
 
-```{r setup, include=FALSE}
-# Setting NO evaluation of code chunks as default (needed for knitting of bash code without trying to run that)
-knitr::opts_chunk$set(eval = FALSE)
-```
+- [Orthofinder Brassicaceae 2](#orthofinder-brassicaceae-2)
+  - [Species included in this Orthofinder
+    run](#species-included-in-this-orthofinder-run)
+- [Preparation of protein sequences - Brassicaceae
+  1](#preparation-of-protein-sequences---brassicaceae-1)
+  - [Species with the downloadable primary
+    transcripts](#species-with-the-downloadable-primary-transcripts)
+  - [Species anotated at NCBI](#species-anotated-at-ncbi)
+  - [Species other than annotated by NCBI with available protein
+    sequences](#species-other-than-annotated-by-ncbi-with-available-protein-sequences)
+  - [Species without downloadable protein
+    sequences](#species-without-downloadable-protein-sequences)
+  - [Extraction of primary transcripts using Orthofinder
+    script](#extraction-of-primary-transcripts-using-orthofinder-script)
+- [Preparation of protein sequences - Brassicaceae
+  2](#preparation-of-protein-sequences---brassicaceae-2)
+  - [Copying files from Brassicaceae
+    1](#copying-files-from-brassicaceae-1)
+  - [Protein sequences from new
+    genomes](#protein-sequences-from-new-genomes)
+  - [Extraction of primary transcripts using Orthofinder
+    script](#extraction-of-primary-transcripts-using-orthofinder-script-1)
+- [Orthofinder run](#orthofinder-run)
+  - [brassicaceae_2 run](#brassicaceae_2-run)
+- [Results from Orthofinder](#results-from-orthofinder)
+  - [Statistics from Orthofinder](#statistics-from-orthofinder)
 
 # Orthofinder Brassicaceae 2
 
-This is run *Brassicaceae 2*. Compared to run *Brassicaceae 1*, I added two species, whose genomes we recently assembled:
-- *Cardamine glauca*
-- *Noccaea praecox*
+This is run *Brassicaceae 2*. Compared to run *Brassicaceae 1*, I added
+two species, whose genomes we recently assembled: - *Cardamine glauca* -
+*Noccaea praecox*
 
 ## Species included in this Orthofinder run
 
-1. *Alyssum gmelinii*
-  - Celestini, Sonia, Miloš Duchoslav, Mahnaz Nezamivand-Chegini, Jörn Gerchen, Gabriela Šrámková, Raúl Wijfjes, Anna Krejčová, et al. “Genomic Basis of Adaptation to Serpentine Soil in Two Alyssum Species Shows Convergence with Arabidopsis across 20 Million Years of Divergence.” bioRxiv, February 28, 2025. <https://doi.org/10.1101/2025.02.27.640498>.
-2. *Arabidopsis arenosa*
-  - Bramsiepe, Jonathan, Anders K. Krabberød, Katrine N. Bjerkan, Renate M. Alling, Ida M. Johannessen, Karina S. Hornslien, Jason R. Miller, Anne K. Brysting, and Paul E. Grini. “Structural Evidence for MADS-Box Type I Family Expansion Seen in New Assemblies of Arabidopsis Arenosa and A. Lyrata.” The Plant Journal 116, no. 3 (2023): 942–61. <https://doi.org/10.1111/tpj.16401>.
-3. *Arabidopsis lyrata* NCBI
-  - Genome from Hu, Tina T., Pedro Pattyn, Erica G. Bakker, Jun Cao, Jan-Fang Cheng, Richard M. Clark, Noah Fahlgren, et al. “The Arabidopsis Lyrata Genome Sequence and the Basis of Rapid Genome Size Change.” Nature Genetics 43, no. 5 (May 2011): 476–81. <https://doi.org/10.1038/ng.807>.
-  - Annotation from The NCBI Eukaryotic Genome Annotation Pipeline
-  - [GCF_000004255.2](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000004255.2/)
-4. *Arabidopsis lyrata* Rawat
-  - Genome from Hu, Tina T., Pedro Pattyn, Erica G. Bakker, Jun Cao, Jan-Fang Cheng, Richard M. Clark, Noah Fahlgren, et al. “The Arabidopsis Lyrata Genome Sequence and the Basis of Rapid Genome Size Change.” Nature Genetics 43, no. 5 (May 2011): 476–81. <https://doi.org/10.1038/ng.807>.
-  - Annotation from Rawat, Vimal, Ahmed Abdelsamad, Björn Pietzenuk, Danelle K. Seymour, Daniel Koenig, Detlef Weigel, Ales Pecinka, and Korbinian Schneeberger. “Improving the Annotation of Arabidopsis Lyrata Using RNA-Seq Data.” PLOS ONE 10, no. 9 (September 18, 2015): e0137391. <https://doi.org/10.1371/journal.pone.0137391>.
-5. *Arabidopsis thaliana*
-  - Araport11 protein sequences (version 2022-09-14) downloaded from [arabidopsis.org](https://www.arabidopsis.org/download/file?path=Proteins/Araport11_protein_lists/archived/Araport11_pep_20220914_representative_gene_model.gz)
-6. *Arabis alpina*
-  - Jiao, Wen-Biao, Gonzalo Garcia Accinelli, Benjamin Hartwig, Christiane Kiefer, David Baker, Edouard Severing, Eva-Maria Willing, et al. “Improving and Correcting the Contiguity of Long-Read Genome Assemblies of Three Plant Species Using Optical Mapping and Chromosome Conformation Capture Data.” Genome Research 27, no. 5 (May 1, 2017): 778–86. <https://doi.org/10.1101/gr.213652.116>.
-  - Data: <http://www.arabis-alpina.org/refseq.html>, I used the version 5.1 of the genome (later than Jiao et al. 2017)
-7. *Brassica oleracea*
-  - Annotation from The NCBI Eukaryotic Genome Annotation Pipeline
-  - [GCF_000695525.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000695525.1/)
-8. *Brassica rapa*
-  - Annotation from The NCBI Eukaryotic Genome Annotation Pipeline
-  - [GCF_000309985.2](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000309985.2/)
-9. *Camelina sativa*
-  - Annotation from The NCBI Eukaryotic Genome Annotation Pipeline
-  - [GCF_000633955.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000633955.1/)
+1.  *Alyssum gmelinii*
+
+- Celestini, Sonia, Miloš Duchoslav, Mahnaz Nezamivand-Chegini, Jörn
+  Gerchen, Gabriela Šrámková, Raúl Wijfjes, Anna Krejčová, et
+  al. “Genomic Basis of Adaptation to Serpentine Soil in Two Alyssum
+  Species Shows Convergence with Arabidopsis across 20 Million Years of
+  Divergence.” bioRxiv, February 28, 2025.
+  <https://doi.org/10.1101/2025.02.27.640498>.
+
+2.  *Arabidopsis arenosa*
+
+- Bramsiepe, Jonathan, Anders K. Krabberød, Katrine N. Bjerkan,
+  Renate M. Alling, Ida M. Johannessen, Karina S. Hornslien, Jason R.
+  Miller, Anne K. Brysting, and Paul E. Grini. “Structural Evidence for
+  MADS-Box Type I Family Expansion Seen in New Assemblies of Arabidopsis
+  Arenosa and A. Lyrata.” The Plant Journal 116, no. 3 (2023): 942–61.
+  <https://doi.org/10.1111/tpj.16401>.
+
+3.  *Arabidopsis lyrata* NCBI
+
+- Genome from Hu, Tina T., Pedro Pattyn, Erica G. Bakker, Jun Cao,
+  Jan-Fang Cheng, Richard M. Clark, Noah Fahlgren, et al. “The
+  Arabidopsis Lyrata Genome Sequence and the Basis of Rapid Genome Size
+  Change.” Nature Genetics 43, no. 5 (May 2011): 476–81.
+  <https://doi.org/10.1038/ng.807>.
+- Annotation from The NCBI Eukaryotic Genome Annotation Pipeline
+- [GCF_000004255.2](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000004255.2/)
+
+4.  *Arabidopsis lyrata* Rawat
+
+- Genome from Hu, Tina T., Pedro Pattyn, Erica G. Bakker, Jun Cao,
+  Jan-Fang Cheng, Richard M. Clark, Noah Fahlgren, et al. “The
+  Arabidopsis Lyrata Genome Sequence and the Basis of Rapid Genome Size
+  Change.” Nature Genetics 43, no. 5 (May 2011): 476–81.
+  <https://doi.org/10.1038/ng.807>.
+- Annotation from Rawat, Vimal, Ahmed Abdelsamad, Björn Pietzenuk,
+  Danelle K. Seymour, Daniel Koenig, Detlef Weigel, Ales Pecinka, and
+  Korbinian Schneeberger. “Improving the Annotation of Arabidopsis
+  Lyrata Using RNA-Seq Data.” PLOS ONE 10, no. 9 (September 18, 2015):
+  e0137391. <https://doi.org/10.1371/journal.pone.0137391>.
+
+5.  *Arabidopsis thaliana*
+
+- Araport11 protein sequences (version 2022-09-14) downloaded from
+  [arabidopsis.org](https://www.arabidopsis.org/download/file?path=Proteins/Araport11_protein_lists/archived/Araport11_pep_20220914_representative_gene_model.gz)
+
+6.  *Arabis alpina*
+
+- Jiao, Wen-Biao, Gonzalo Garcia Accinelli, Benjamin Hartwig, Christiane
+  Kiefer, David Baker, Edouard Severing, Eva-Maria Willing, et
+  al. “Improving and Correcting the Contiguity of Long-Read Genome
+  Assemblies of Three Plant Species Using Optical Mapping and Chromosome
+  Conformation Capture Data.” Genome Research 27, no. 5 (May 1, 2017):
+  778–86. <https://doi.org/10.1101/gr.213652.116>.
+- Data: <http://www.arabis-alpina.org/refseq.html>, I used the version
+  5.1 of the genome (later than Jiao et al. 2017)
+
+7.  *Brassica oleracea*
+
+- Annotation from The NCBI Eukaryotic Genome Annotation Pipeline
+- [GCF_000695525.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000695525.1/)
+
+8.  *Brassica rapa*
+
+- Annotation from The NCBI Eukaryotic Genome Annotation Pipeline
+- [GCF_000309985.2](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000309985.2/)
+
+9.  *Camelina sativa*
+
+- Annotation from The NCBI Eukaryotic Genome Annotation Pipeline
+- [GCF_000633955.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000633955.1/)
+
 10. *Capsella rubella*
-  - Annotation from The NCBI Eukaryotic Genome Annotation Pipeline
-  - [GCF_000375325.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000375325.1/)
+
+- Annotation from The NCBI Eukaryotic Genome Annotation Pipeline
+- [GCF_000375325.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000375325.1/)
+
 11. *Cardamine glauca*
-  - Nezamivand-Chegini Mahnaz, Duchoslav Miloš, ..., Kolar Filip 2025 (to be published)
+
+- Nezamivand-Chegini Mahnaz, Duchoslav Miloš, …, Kolar Filip 2025 (to be
+  published)
+
 12. *Cardamine hirsuta*
-  - Gan, Xiangchao, Angela Hay, Michiel Kwantes, Georg Haberer, Asis Hallab, Raffaele Dello Ioio, Hugo Hofhuis, et al. “The Cardamine Hirsuta Genome Offers Insight into the Evolution of Morphological Diversity.” Nature Plants 2, no. 11 (October 31, 2016): 1–7. <https://doi.org/10.1038/nplants.2016.167>.
-  - Data: <http://chi.mpipz.mpg.de/assembly.html>
+
+- Gan, Xiangchao, Angela Hay, Michiel Kwantes, Georg Haberer, Asis
+  Hallab, Raffaele Dello Ioio, Hugo Hofhuis, et al. “The Cardamine
+  Hirsuta Genome Offers Insight into the Evolution of Morphological
+  Diversity.” Nature Plants 2, no. 11 (October 31, 2016): 1–7.
+  <https://doi.org/10.1038/nplants.2016.167>.
+- Data: <http://chi.mpipz.mpg.de/assembly.html>
+
 13. *Cochlearia excelsa*
-  - Bray, Sian M., Tuomas Hämälä, Min Zhou, Silvia Busoms, Sina Fischer, Stuart D. Desjardins, Terezie Mandáková, et al. “Kinetochore and Ionomic Adaptation to Whole-Genome Duplication in Cochlearia Shows Evolutionary Convergence in Three Autopolyploids.” Cell Reports 43, no. 8 (August 27, 2024). <https://doi.org/10.1016/j.celrep.2024.114576>.
-  - Data: <https://doi.org/10.5061/dryad.ncjsxkt1s>
+
+- Bray, Sian M., Tuomas Hämälä, Min Zhou, Silvia Busoms, Sina Fischer,
+  Stuart D. Desjardins, Terezie Mandáková, et al. “Kinetochore and
+  Ionomic Adaptation to Whole-Genome Duplication in Cochlearia Shows
+  Evolutionary Convergence in Three Autopolyploids.” Cell Reports 43,
+  no. 8 (August 27, 2024).
+  <https://doi.org/10.1016/j.celrep.2024.114576>.
+- Data: <https://doi.org/10.5061/dryad.ncjsxkt1s>
+
 14. *Conringia planisiliqua*
-  - Jiao, Wen-Biao, Gonzalo Garcia Accinelli, Benjamin Hartwig, Christiane Kiefer, David Baker, Edouard Severing, Eva-Maria Willing, et al. “Improving and Correcting the Contiguity of Long-Read Genome Assemblies of Three Plant Species Using Optical Mapping and Chromosome Conformation Capture Data.” Genome Research 27, no. 5 (May 1, 2017): 778–86. <https://doi.org/10.1101/gr.213652.116>.
+
+- Jiao, Wen-Biao, Gonzalo Garcia Accinelli, Benjamin Hartwig, Christiane
+  Kiefer, David Baker, Edouard Severing, Eva-Maria Willing, et
+  al. “Improving and Correcting the Contiguity of Long-Read Genome
+  Assemblies of Three Plant Species Using Optical Mapping and Chromosome
+  Conformation Capture Data.” Genome Research 27, no. 5 (May 1, 2017):
+  778–86. <https://doi.org/10.1101/gr.213652.116>.
+
 15. *Euclidium syriacum*
-  - Jiao, Wen-Biao, Gonzalo Garcia Accinelli, Benjamin Hartwig, Christiane Kiefer, David Baker, Edouard Severing, Eva-Maria Willing, et al. “Improving and Correcting the Contiguity of Long-Read Genome Assemblies of Three Plant Species Using Optical Mapping and Chromosome Conformation Capture Data.” Genome Research 27, no. 5 (May 1, 2017): 778–86. <https://doi.org/10.1101/gr.213652.116>.
+
+- Jiao, Wen-Biao, Gonzalo Garcia Accinelli, Benjamin Hartwig, Christiane
+  Kiefer, David Baker, Edouard Severing, Eva-Maria Willing, et
+  al. “Improving and Correcting the Contiguity of Long-Read Genome
+  Assemblies of Three Plant Species Using Optical Mapping and Chromosome
+  Conformation Capture Data.” Genome Research 27, no. 5 (May 1, 2017):
+  778–86. <https://doi.org/10.1101/gr.213652.116>.
+
 16. *Eutrema salsugineum*
-  - Annotation from The NCBI Eukaryotic Genome Annotation Pipeline
-  - [GCF_000478725.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000478725.1/)
+
+- Annotation from The NCBI Eukaryotic Genome Annotation Pipeline
+- [GCF_000478725.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000478725.1/)
+
 17. *Noccaea praecox*
-  - Nezamivand-Chegini Mahnaz, Duchoslav Miloš, ..., Kolar Filip 2025 (to be published)
+
+- Nezamivand-Chegini Mahnaz, Duchoslav Miloš, …, Kolar Filip 2025 (to be
+  published)
+
 18. *Raphanus sativus*
-  - Annotation from The NCBI Eukaryotic Genome Annotation Pipeline
-  - [GCF_000801105.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000801105.1/)
+
+- Annotation from The NCBI Eukaryotic Genome Annotation Pipeline
+- [GCF_000801105.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000801105.1/)
+
 19. *Rorippa islandica*
-  - <https://phytozome-next.jgi.doe.gov/info/Rislandica_v1_1>
+
+- <https://phytozome-next.jgi.doe.gov/info/Rislandica_v1_1>
 
 # Preparation of protein sequences - Brassicaceae 1
+
 ### Folders etc.
-```{sh}
+
+``` sh
 cd /storage/brno12-cerit/home/duchmil/orthofinder
 mkdir brassicaceae_1
 cd brassicaceae_1/
@@ -88,7 +192,8 @@ mkdir genomes_for_extracting_proteins
 ```
 
 ## Species with the downloadable primary transcripts
-```{sh}
+
+``` sh
 ### Download of the protein sequences
 cd /storage/brno12-cerit/home/duchmil/orthofinder/brassicaceae_1/original_protein_fasta
 
@@ -116,7 +221,7 @@ cp R_islandica/Phytozome/PhytozomeV13/Rislandica/v1.1/annotation/Rislandica_473_
 
 ## Species anotated at NCBI
 
-```{sh}
+``` sh
 ### Species anotated at NCBI
 cd ~/orthofinder/brassicaceae_1/original_protein_fasta/
 
@@ -149,10 +254,9 @@ done
 cp longest_transcripts/*.fasta ../primary_transcripts/
 ```
 
+## Species other than annotated by NCBI with available protein sequences
 
-
-## Species other than annotated by NCBI with available protein sequences 
-```{sh}
+``` sh
 ### Species with available protein sequences other than annotated by NCBI
 # Orthofinder script for extracting primary transcripts will be used for these.
 
@@ -217,8 +321,10 @@ cp alyssum_v2_annotation_proteins.fasta ../renamed_protein_fasta_other/Alyssum_g
 ```
 
 ## Species without downloadable protein sequences
+
 ### Downloading genomes and annotations
-```{sh}
+
+``` sh
 ### Species without downloadable protein sequences
 cd ~/orthofinder/brassicaceae_1/genomes_for_extracting_proteins
 
@@ -275,18 +381,15 @@ cd ..
 
 
 # There is a problem that the IDs (scaffold names) are different in annotation and in genome sequence. This I will solve locally in R. I downloaded the files.
-
-
 ```
 
 ### Changing of sequence names in fasta files with genomes of E. syriacum and C. planisiliqua
 
-```{r}
+``` r
 setwd("D:/!ecolgen/resources/orthofinder/brassicaceae_1")
-
 ```
 
-```{r eval=FALSE}
+``` r
 ### C. planisiliqua
 
 ## Changing sequence names in fasta genome file to match those in GFF annotation
@@ -387,13 +490,13 @@ seq.l.df.ordered <- seq.l.df[order(row.names(seq.l.df)), ]
 seq.l.df.ordered
 # Is the lenght of scaffold always higher then the maximal coordinate?
 all(seq.l.df$seq.length > seq.l.df$`seq.length.gff[match(seq.names, names(seq.length.gff))]`, na.rm = T)
-
 ```
+
 The gff files seem to match the assemblies.
 
 ### Extraction of protein sequences from genome and annotation (A. alpina, E. syriacum and C. planisiliqua) using AGAT
 
-```{bash}
+``` bash
 # interactive job
 qsub -I -l select=1:ncpus=1:mem=8gb:scratch_local=10gb -l walltime=2:00:00
 
@@ -525,7 +628,8 @@ cp Euclidium_syriacum_proteins.fasta ../../primary_transcripts/Euclidium_syriacu
 ```
 
 ## Extraction of primary transcripts using Orthofinder script
-```{bash}
+
+``` bash
 ### Extraction of primary transcripts using Orthofinder script
 
 # loading Python and the modules needed
@@ -550,7 +654,8 @@ cp -v primary_transcripts/*.fasta ../primary_transcripts/
 # Preparation of protein sequences - Brassicaceae 2
 
 ### Folders etc.
-```{sh}
+
+``` sh
 cd /storage/brno12-cerit/home/duchmil/orthofinder
 mkdir brassicaceae_2
 cd brassicaceae_2/
@@ -562,15 +667,16 @@ mkdir genomes_for_extracting_proteins
 ```
 
 ## Copying files from Brassicaceae 1
-```{sh}
+
+``` sh
 cd /storage/brno12-cerit/home/duchmil/orthofinder/brassicaceae_2/primary_transcripts
 
 cp -v /storage/brno12-cerit/home/duchmil/orthofinder/brassicaceae_1/primary_transcripts/*.fasta .
-
 ```
 
 ## Protein sequences from new genomes
-```{sh}
+
+``` sh
 cd /storage/brno12-cerit/home/duchmil/orthofinder/brassicaceae_2/original_protein_fasta
 
 ## Cardamine glauca
@@ -584,11 +690,11 @@ cp -v Cardamine_glauca_v1_annotation_proteins.fasta ../renamed_protein_fasta_oth
 # Nezamivand-Chegini Mahnaz, Duchoslav Milos, ..., Kolar Filip 2025 (to be published)
 cp -v /storage/brno12-cerit/home/duchmil/annotations/Noccaea_praecox_2024_12/annot_processing/Noccaea_praecox_v1_annotation_proteins.fasta .
 cp -v Noccaea_praecox_v1_annotation_proteins.fasta ../renamed_protein_fasta_other/Noccaea_praecox.fasta
-
 ```
 
 ## Extraction of primary transcripts using Orthofinder script
-```{bash}
+
+``` bash
 ### Extraction of primary transcripts using Orthofinder script
 
 # loading Python and the modules needed
@@ -610,36 +716,23 @@ for f in *.fasta ; do python ~/orthofinder/OrthoFinder_source/tools/primary_tran
 cp -v primary_transcripts/*.fasta ../primary_transcripts/
 ```
 
-
-
-
 # Orthofinder run
 
 ## brassicaceae_2 run
 
-18 species, 19 input files (two different annotations for Arabidopsis_lyrata)
-Input fasta files:
+18 species, 19 input files (two different annotations for
+Arabidopsis_lyrata) Input fasta files:
 
-Alyssum_gmelinii.fasta
-Arabidopsis_arenosa.fasta
-Arabidopsis_lyrata_NCBI.fasta
-Arabidopsis_lyrata_Rawat.fasta
-Arabidopsis_thaliana.fasta
-Arabis_alpina.fasta
-Brassica_oleracea.fasta
-Brassica_rapa.fasta
-Camelina_sativa.fasta
-Capsella_rubella.fasta
-Cardamine_glauca.fasta
-Cardamine_hirsuta.fasta
-Cochlearia_excelsa.fasta
-Conringia_planisiliqua.fasta
-Euclidium_syriacum.fasta
-Eutrema_salsugineum.fasta
-Noccaea_praecox.fasta
-Raphanus_sativus.fasta
+Alyssum_gmelinii.fasta Arabidopsis_arenosa.fasta
+Arabidopsis_lyrata_NCBI.fasta Arabidopsis_lyrata_Rawat.fasta
+Arabidopsis_thaliana.fasta Arabis_alpina.fasta Brassica_oleracea.fasta
+Brassica_rapa.fasta Camelina_sativa.fasta Capsella_rubella.fasta
+Cardamine_glauca.fasta Cardamine_hirsuta.fasta Cochlearia_excelsa.fasta
+Conringia_planisiliqua.fasta Euclidium_syriacum.fasta
+Eutrema_salsugineum.fasta Noccaea_praecox.fasta Raphanus_sativus.fasta
 Rorippa_islandica.fasta
-```{bash}
+
+``` bash
 ### Metacentrum script
 
 #PBS -N orthofinder_brassicaceae_2
@@ -683,8 +776,7 @@ clean_scratch
 # Resources used: 7 h, 54% CPU, 11 GB memory.
 ```
 
-
-```{bash}
+``` bash
 ### brassicaceae_2 run
 cd /storage/brno12-cerit/home/duchmil/orthofinder/brassicaceae_2/metacentrum_scripts/
 
@@ -692,17 +784,10 @@ cd /storage/brno12-cerit/home/duchmil/orthofinder/brassicaceae_2/metacentrum_scr
 qsub orthofinder_brassicaceae_2.bash
 
 qstat -u duchmil
-
-
 ```
 
-
-
-
-
-Dodělat:
-- vytvořené soubory doplnit na sdílený disk, aktualizovat readme
-
+Dodělat: - vytvořené soubory doplnit na sdílený disk, aktualizovat
+readme
 
 # Results from Orthofinder
 
@@ -710,8 +795,7 @@ Dodělat:
 
 ### Orthogroups - species overlap
 
-
-```{r}
+``` r
 setwd("D:/!ecolgen/resources/orthofinder/brassicaceae_2/")
 old.par<-par(no.readonly = T)
 
@@ -767,7 +851,7 @@ dev.off()
 
 ### Orthologues statistics
 
-```{r}
+``` r
 folder <- "orthofinder_results/Results_brassicaceae_2/Comparative_Genomics_Statistics/"
 file.pattern <- "OrthologuesStats"
 files <- list.files(folder, pattern = file.pattern)
@@ -797,7 +881,8 @@ dev.off()
 ```
 
 ### Statistics per species
-```{r}
+
+``` r
 per.spec <- read.table(file = "orthofinder_results/Results_brassicaceae_2/Comparative_Genomics_Statistics/Statistics_PerSpecies.tsv", sep = "\t", quote = "", header = T, row.names = 1, nrows = 10)
 
 
@@ -827,8 +912,4 @@ text(x = rep(x = xaxs, each = length(yaxs)), y = rep(x = yaxs, times = length(xa
      cex = 0.8)
 par(old.par)
 dev.off()
-
 ```
-
-
-
