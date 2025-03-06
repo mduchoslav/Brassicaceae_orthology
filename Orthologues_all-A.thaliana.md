@@ -1,83 +1,115 @@
----
-title: "Enriching list of orthologues"
-author: "Milos Duchoslav"
-date: "2024-11-19"
-output:
-  github_document:
-    toc: true
-    toc_depth: 2
-editor_options: 
-  chunk_output_type: console
----
+Enriching list of orthologues
+================
+Milos Duchoslav
+2024-11-19
 
-```{r setup, include=FALSE}
-# Setting NO evaluation of code chunks as default (needed for knitting of bash code without trying to run that)
-knitr::opts_chunk$set(eval = FALSE)
-```
+- [Introduction](#introduction)
+- [Strategy](#strategy)
+- [Running BLAST and reciprocal
+  BLAST](#running-blast-and-reciprocal-blast)
+  - [Script for running Blast on
+    Metacentrum](#script-for-running-blast-on-metacentrum)
+  - [Reciprocal best hit (RBH) BLAST](#reciprocal-best-hit-rbh-blast)
+- [Enriching list of orthologues - compilation of
+  results](#enriching-list-of-orthologues---compilation-of-results)
 
 # Introduction
 
-This RMarkdown file (or its markdown version for GitHub) documents supplementing the list of orthologues from OrthoFinder (run brassicaceae_2) with results from BLAST and with orthogroups from OrthoFinder to get *Arabidopsis thaliana* homologues for as many genes of the target species as possible. The homologues will be used in other scripts to transfer functional annotation from *Arabidopsis thaliana* genes.
+This RMarkdown file (or its markdown version for GitHub) documents
+supplementing the list of orthologues from OrthoFinder (run
+brassicaceae_2) with results from BLAST and with orthogroups from
+OrthoFinder to get *Arabidopsis thaliana* homologues for as many genes
+of the target species as possible. The homologues will be used in other
+scripts to transfer functional annotation from *Arabidopsis thaliana*
+genes.
 
 This file includes:
 
-1. BASH code that I ran at MetaCentrum (Czech national grid infrastructure) running PBS scheduling system for batch jobs.
-2. R code that I ran locally.
+1.  BASH code that I ran at MetaCentrum (Czech national grid
+    infrastructure) running PBS scheduling system for batch jobs.
+2.  R code that I ran locally.
 
 ### SW installation and versions
 
-The SW installation instructions and versions of SW used is described in [Installation_of_SW.md](Installation_of_SW.md).
+The SW installation instructions and versions of SW used is described in
+[Installation_of_SW.md](Installation_of_SW.md).
 
 # Strategy
 
 ### Sources of information
 
-1. Orthologues tables from OrthoFinder
-	- Tables from `Orthologues` folder from OrthoFinder results.
-2. Phylogenetic hierarchical orthogroups from OrthoFinder (N0 table)
-	- Table `Phylogenetic_Hierarchical_Orthogroups/N0.tsv` from OrthoFinder results.
-	- It is more finely resolved compared to Orthogroups table.
-3. Orthogroups table from OrthoFinder
-	- Table `Orthogroups/Orthogroups.tsv` from OrthoFinder results.
-	- The orthogroups in this table are broader compared to N0 orthogroups.
-4. Reciprocal best hit (RBH) BLAST
-5. Simple BLAST
+1.  Orthologues tables from OrthoFinder
+    - Tables from `Orthologues` folder from OrthoFinder results.
+2.  Phylogenetic hierarchical orthogroups from OrthoFinder (N0 table)
+    - Table `Phylogenetic_Hierarchical_Orthogroups/N0.tsv` from
+      OrthoFinder results.
+    - It is more finely resolved compared to Orthogroups table.
+3.  Orthogroups table from OrthoFinder
+    - Table `Orthogroups/Orthogroups.tsv` from OrthoFinder results.
+    - The orthogroups in this table are broader compared to N0
+      orthogroups.
+4.  Reciprocal best hit (RBH) BLAST
+5.  Simple BLAST
 
-The sources other than Orthologues tables from OrthoFinder might not give us the real orthologues in *Arabidopsis thaliana*, but possibly other kinds of homologues. However, these homologues will likely have similar functions, so it will be useful for transferring of functional annotation from these genes.
+The sources other than Orthologues tables from OrthoFinder might not
+give us the real orthologues in *Arabidopsis thaliana*, but possibly
+other kinds of homologues. However, these homologues will likely have
+similar functions, so it will be useful for transferring of functional
+annotation from these genes.
 
 ### Final selection of orthologues
-  
-Strategy for column with final orthologues (column `Arabidopsis_thaliana`):
-  
-1. Use orthologues from orthologues table.
-2. If missing, use Blast RBH.
-3. If missing, use genes from N0 hierarchical orthogroups.
-4. If missing, use genes from broad orthogroups.
-5. If missing, use genes hits from simple Blast (but only those with BLAST_pident > 40 & BLAST_qcovhsp > 50)
-	- BLAST_pident: Percentage of identical matches (in local alignment)
-	- BLAST_qcovhsp: Query coverage per HSP (%)
-		- HSP = High-scoring Segment Pair (local alignment with no gaps)
-		
-Strategy for column with single orthologues (column `single_Arabidopsis_thaliana`):
 
-1. If there is only one *A. thaliana* gene in column `Arabidopsis_thaliana`, use that one.
-2. Else, if there is one and only RBH and it is among genes in column `Arabidopsis_thaliana`, take the RBH.
-3. Else, take the gene from the column `Arabidopsis_thaliana` that had the highest bitscore in the simple BLAST results. If several have the highest bitscore, take the first.
-4. If the genes in column `Arabidopsis_thaliana` are not among BLAST hits, take nothing.
+Strategy for column with final orthologues (column
+`Arabidopsis_thaliana`):
 
-**Recommendation**: It is appealing to use the "single" orthologues (`single_Arabidopsis_thaliana`), because it makes things easier. However, I recommend to do that only in cases when it is absolutely necessary and otherwise use the column where there are multiple orthologues in some cases (`Arabidopsis_thaliana`). The real orthology is not always one-to-one due to multiplications of genes in some species (there is a good explanation in [OrthoFinder GitHub](https://github.com/davidemms/OrthoFinder)). The column `Arabidopsis_thaliana` should better reflect the real biology.
- 
+1.  Use orthologues from orthologues table.
+2.  If missing, use Blast RBH.
+3.  If missing, use genes from N0 hierarchical orthogroups.
+4.  If missing, use genes from broad orthogroups.
+5.  If missing, use genes hits from simple Blast (but only those with
+    BLAST_pident \> 40 & BLAST_qcovhsp \> 50)
+    - BLAST_pident: Percentage of identical matches (in local alignment)
+    - BLAST_qcovhsp: Query coverage per HSP (%)
+      - HSP = High-scoring Segment Pair (local alignment with no gaps)
+
+Strategy for column with single orthologues (column
+`single_Arabidopsis_thaliana`):
+
+1.  If there is only one *A. thaliana* gene in column
+    `Arabidopsis_thaliana`, use that one.
+2.  Else, if there is one and only RBH and it is among genes in column
+    `Arabidopsis_thaliana`, take the RBH.
+3.  Else, take the gene from the column `Arabidopsis_thaliana` that had
+    the highest bitscore in the simple BLAST results. If several have
+    the highest bitscore, take the first.
+4.  If the genes in column `Arabidopsis_thaliana` are not among BLAST
+    hits, take nothing.
+
+**Recommendation**: It is appealing to use the “single” orthologues
+(`single_Arabidopsis_thaliana`), because it makes things easier.
+However, I recommend to do that only in cases when it is absolutely
+necessary and otherwise use the column where there are multiple
+orthologues in some cases (`Arabidopsis_thaliana`). The real orthology
+is not always one-to-one due to multiplications of genes in some species
+(there is a good explanation in [OrthoFinder
+GitHub](https://github.com/davidemms/OrthoFinder)). The column
+`Arabidopsis_thaliana` should better reflect the real biology.
+
 # Running BLAST and reciprocal BLAST
 
 Approach similar to:  
-> Bray, Sian M., Tuomas Hämälä, Min Zhou, Silvia Busoms, Sina Fischer, Stuart D. Desjardins, Terezie Mandáková, et al. “Kinetochore and Ionomic Adaptation to Whole-Genome Duplication in Cochlearia Shows Evolutionary Convergence in Three Autopolyploids.” Cell Reports 43, no. 8 (August 27, 2024). <https://doi.org/10.1016/j.celrep.2024.114576>.
+\> Bray, Sian M., Tuomas Hämälä, Min Zhou, Silvia Busoms, Sina Fischer,
+Stuart D. Desjardins, Terezie Mandáková, et al. “Kinetochore and Ionomic
+Adaptation to Whole-Genome Duplication in Cochlearia Shows Evolutionary
+Convergence in Three Autopolyploids.” Cell Reports 43, no. 8 (August 27,
+2024). <https://doi.org/10.1016/j.celrep.2024.114576>.
 
-The code for the paper is at Sian Bray's [GitHub](https://github.com/Sian-Bray/Cochlearia_2024).
-
+The code for the paper is at Sian Bray’s
+[GitHub](https://github.com/Sian-Bray/Cochlearia_2024).
 
 ## Script for running Blast on Metacentrum
 
-```{bash}
+``` bash
 ### Metacentrum script
 
 #PBS -N blast_species_vs_Arabidopsis_thaliana
@@ -150,7 +182,7 @@ clean_scratch
 # Resources used: 14-19 min, 83-99% CPU, 500-600 MB memory.
 ```
 
-```{bash}
+``` bash
 cd /storage/brno12-cerit/home/duchmil/orthofinder/brassicaceae_2/metacentrum_scripts
 
 for species in Alyssum_gmelinii Arabidopsis_arenosa Arabidopsis_lyrata_NCBI Cardamine_glauca Noccaea_praecox
@@ -158,10 +190,9 @@ do
 echo "Submitting job for species: $species"
 qsub  -v "species=$species" blast_species_vs_Arabidopsis_thaliana.bash
 done
-
 ```
 
-```{bash}
+``` bash
 cd /storage/brno12-cerit/home/duchmil/orthofinder/brassicaceae_2/blast_results
 # compress the result
 gzip *_vs_Arabidopsis_thaliana_all_Vs_all_eval_0.1.tsv
@@ -171,48 +202,46 @@ gzip *_vs_Arabidopsis_thaliana_all_Vs_all_eval_0.1.tsv
 
 `outfmt='7 qaccver saccver pident length mismatch gapopen qstart qend sstart send evalue bitscore qcovhsp qlen slen'`
 
-Column | NCBI name | Description
-------- | -------- | -----------
-1 | qaccver | Query accession and version
-2 | saccver | Subject accession and version
-3 | pident | Percentage of identical matches
-4 | length | Alignment length
-5 | mismatch | Number of mismatches
-6 | gapopen | Number of gap openings
-7 | qstart | Start of alignment in query
-8 | qend | End of alignment in query
-9 | sstart | Start of alignment in subject (database hit)
-10 | send | End of alignment in subject (database hit)
-11 | evalue | Expectation value (E-value)
-12 | bitscore | Bit score
-13 | qcovhsp | Query coverage per HSP (%)
-14 | qlen | Query sequence length
-15 | slen | Subject sequence length
+| Column | NCBI name | Description                                  |
+|--------|-----------|----------------------------------------------|
+| 1      | qaccver   | Query accession and version                  |
+| 2      | saccver   | Subject accession and version                |
+| 3      | pident    | Percentage of identical matches              |
+| 4      | length    | Alignment length                             |
+| 5      | mismatch  | Number of mismatches                         |
+| 6      | gapopen   | Number of gap openings                       |
+| 7      | qstart    | Start of alignment in query                  |
+| 8      | qend      | End of alignment in query                    |
+| 9      | sstart    | Start of alignment in subject (database hit) |
+| 10     | send      | End of alignment in subject (database hit)   |
+| 11     | evalue    | Expectation value (E-value)                  |
+| 12     | bitscore  | Bit score                                    |
+| 13     | qcovhsp   | Query coverage per HSP (%)                   |
+| 14     | qlen      | Query sequence length                        |
+| 15     | slen      | Subject sequence length                      |
 
+Suggestions from
+<https://github.com/peterjc/galaxy_blast/blob/master/tools/blast_rbh/blast_rbh.xml>:
 
-Suggestions from <https://github.com/peterjc/galaxy_blast/blob/master/tools/blast_rbh/blast_rbh.xml>:
+    If you are trying to use BLAST RBH matches to identify candidate orthologues
+    or transfer annotation, you *must* use a percentage identity and minimum
+    coverage threshold or similiar. See:
 
-```
-If you are trying to use BLAST RBH matches to identify candidate orthologues
-or transfer annotation, you *must* use a percentage identity and minimum
-coverage threshold or similiar. See:
+    Punta and Ofran (2008) The Rough Guide to In Silico Function Prediction,
+    or How To Use Sequence and Structure Information To Predict Protein
+    Function. PLoS Comput Biol 4(10): e1000160.
+    https://doi.org/10.1371/journal.pcbi.1000160
 
-Punta and Ofran (2008) The Rough Guide to In Silico Function Prediction,
-or How To Use Sequence and Structure Information To Predict Protein
-Function. PLoS Comput Biol 4(10): e1000160.
-https://doi.org/10.1371/journal.pcbi.1000160
-
-The defaults are to require 70% sequence identity over the aligned region
-(using ``pident`` in the BLAST+ tabular output), and that the HSP alignment
-covers at least 50% of the query sequence (using ``qcovhsp`` in the BLAST+
-tabular output).
-```
+    The defaults are to require 70% sequence identity over the aligned region
+    (using ``pident`` in the BLAST+ tabular output), and that the HSP alignment
+    covers at least 50% of the query sequence (using ``qcovhsp`` in the BLAST+
+    tabular output).
 
 ## Reciprocal best hit (RBH) BLAST
 
 ### Running RBH on Metacentrum
 
-```{bash}
+``` bash
 ### Metacentrum script
 
 #PBS -N blast_RBH_species_vs_Arabidopsis_thaliana
@@ -278,7 +307,7 @@ clean_scratch
 # Resources: up to 1 h, 68-99 % CPU, up to 660 MB memory
 ```
 
-```{bash}
+``` bash
 cd /storage/brno12-cerit/home/duchmil/orthofinder/brassicaceae_2/metacentrum_scripts
 
 for species in Alyssum_gmelinii Arabidopsis_arenosa Arabidopsis_lyrata_NCBI Cardamine_glauca Noccaea_praecox
@@ -286,13 +315,9 @@ do
 echo "Submitting job for species: $species"
 qsub  -v "species=$species" blast_RBH_species_vs_Arabidopsis_thaliana.bash
 done
-
-
 ```
 
-
-
-```{bash}
+``` bash
 cd /storage/brno12-cerit/home/duchmil/orthofinder/brassicaceae_2/blast_results
 wc -l *_vs_Arabidopsis_thaliana_rbh-i70-c50.txt
 
@@ -301,20 +326,20 @@ grep ';' Arabidopsis_arenosa_vs_Arabidopsis_thaliana_rbh-i70-c50.txt
 # Genes with identical protein sequences are merged, the gene IDs are separated by ';'.
 ```
 
-Genes with identical protein sequences are merged, the gene IDs are separated by ';'.
+Genes with identical protein sequences are merged, the gene IDs are
+separated by ‘;’.
 
-Number of RBHs:
-  15596 Alyssum_gmelinii_vs_Arabidopsis_thaliana_rbh-i70-c50.txt
-  21192 Arabidopsis_arenosa_vs_Arabidopsis_thaliana_rbh-i70-c50.txt
-  22534 Arabidopsis_lyrata_NCBI_vs_Arabidopsis_thaliana_rbh-i70-c50.txt
-  18265 Cardamine_glauca_vs_Arabidopsis_thaliana_rbh-i70-c50.txt
-  17388 Noccaea_praecox_vs_Arabidopsis_thaliana_rbh-i70-c50.txt
+Number of RBHs: 15596
+Alyssum_gmelinii_vs_Arabidopsis_thaliana_rbh-i70-c50.txt 21192
+Arabidopsis_arenosa_vs_Arabidopsis_thaliana_rbh-i70-c50.txt 22534
+Arabidopsis_lyrata_NCBI_vs_Arabidopsis_thaliana_rbh-i70-c50.txt 18265
+Cardamine_glauca_vs_Arabidopsis_thaliana_rbh-i70-c50.txt 17388
+Noccaea_praecox_vs_Arabidopsis_thaliana_rbh-i70-c50.txt
 
 There was still this error message:
 `Warning: Sequences with tied best hits found, you may have duplicates/clusters`
-I guess it might mean that there are some proteins that have identical sequence for some domain and the hit was to that domain.
-
-
+I guess it might mean that there are some proteins that have identical
+sequence for some domain and the hit was to that domain.
 
 # Enriching list of orthologues - compilation of results
 
@@ -322,7 +347,7 @@ R scripts for compilation of results from the different sources.
 
 ### Load functions etc.
 
-```{r}
+``` r
 setwd("D:/!ecolgen/resources/orthofinder/brassicaceae_2/")
 old.par<-par(no.readonly = T)
 
@@ -398,7 +423,8 @@ df.split <- function(x, col.split, split = ", ") {
 ```
 
 ### Reading common files
-```{r}
+
+``` r
 o.groups_a <- read.table(file = "orthofinder_results/Results_brassicaceae_2/Phylogenetic_Hierarchical_Orthogroups/N0.tsv", sep = "\t", header = T)
 
 colnames(o.groups_a)
@@ -406,13 +432,12 @@ colnames(o.groups_a)
 o.groups_b <- read.table(file = "orthofinder_results/Results_brassicaceae_2/Orthogroups/Orthogroups.tsv", sep = "\t", header = T)
 ```
 
-
-
 ### Big loop
 
-This loop cycles through species where the orthologues from Orthofinder should be supplemented.
+This loop cycles through species where the orthologues from Orthofinder
+should be supplemented.
 
-```{r}
+``` r
 # read species names
 blast.files <- list.files(path = "blast_results/", pattern = ".tsv.gz")
 species <- sub(pattern = "_vs_Arabidopsis_thaliana_all_Vs_all_eval_0.1.tsv.gz", replacement = "", x = blast.files, fixed = T)
@@ -723,15 +748,4 @@ for(one.species in species) {
 
 ### Exporting table with statistics
 write.table(x = stats.ortho, file = "R_analysis/supplementing_orthologues_stats.tsv", sep = "\t", row.names = F)
-
 ```
-
-
-
-
-
-
-
-
-
-

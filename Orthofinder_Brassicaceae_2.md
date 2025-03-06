@@ -3,6 +3,7 @@ Orthofinder - Brassicaceae
 Milos Duchoslav
 2025-01-01
 
+- [Introduction](#introduction)
 - [Orthofinder Brassicaceae 2](#orthofinder-brassicaceae-2)
   - [Species included in this Orthofinder
     run](#species-included-in-this-orthofinder-run)
@@ -28,7 +29,25 @@ Milos Duchoslav
 - [Orthofinder run](#orthofinder-run)
   - [brassicaceae_2 run](#brassicaceae_2-run)
 - [Results from Orthofinder](#results-from-orthofinder)
-  - [Statistics from Orthofinder](#statistics-from-orthofinder)
+  - [Visualization of statistics from
+    Orthofinder](#visualization-of-statistics-from-orthofinder)
+
+# Introduction
+
+This RMarkdown file (or its markdown version for GitHub) documents
+running of OrthoFinder tool to get orthology relationships between some
+Brassicaceae species.
+
+This file includes:
+
+1.  BASH code that I ran at MetaCentrum (Czech national grid
+    infrastructure) running PBS scheduling system for batch jobs.
+2.  R code that I ran locally.
+
+### SW installation and versions
+
+The SW installation instructions and versions of SW used is described in
+[Installation_of_SW.md](Installation_of_SW.md).
 
 # Orthofinder Brassicaceae 2
 
@@ -147,8 +166,8 @@ two species, whose genomes we recently assembled:
 
 # Preparation of protein sequences - Brassicaceae 1
 
-Here I descrie the preparation of the data for the first run, then in th
-next section I add the data for the second run.
+Here I describe the preparation of the data for the first run, then in
+the next section, I will add the data for the second run.
 
 ### Folders etc.
 
@@ -759,12 +778,9 @@ qsub orthofinder_brassicaceae_2.bash
 qstat -u duchmil
 ```
 
-Dodělat: - vytvořené soubory doplnit na sdílený disk, aktualizovat
-readme
-
 # Results from Orthofinder
 
-## Statistics from Orthofinder
+## Visualization of statistics from Orthofinder
 
 ### Orthogroups - species overlap
 
