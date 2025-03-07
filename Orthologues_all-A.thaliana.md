@@ -1,7 +1,7 @@
 Enriching list of orthologues
 ================
-Milos Duchoslav
-2024-11-19
+Miloš Duchoslav
+2025-02
 
 - [Introduction](#introduction)
 - [Strategy](#strategy)

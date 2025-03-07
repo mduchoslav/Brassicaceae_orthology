@@ -1,7 +1,7 @@
 ---
 title: "Enriching list of orthologues"
-author: "Milos Duchoslav"
-date: "2024-11-19"
+author: "Miloš Duchoslav"
+date: "2025-02"
 output:
   github_document:
     toc: true

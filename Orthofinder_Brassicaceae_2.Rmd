@@ -1,7 +1,7 @@
 ---
 title: "Orthofinder - Brassicaceae"
-author: "Milos Duchoslav"
-date: "2025-01-01"
+author: "Miloš Duchoslav"
+date: "2025-02"
 output:
   github_document:
     toc: true

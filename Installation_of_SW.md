@@ -1,7 +1,7 @@
 SW installation for Annotation of *Alyssum gmelinii* genome
 ================
 Miloš Duchoslav
-2025-02-25
+2025-02
 
 - [OrthoFinder](#orthofinder)
 - [R](#r)

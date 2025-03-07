@@ -1,7 +1,7 @@
 Orthofinder - Brassicaceae
 ================
-Milos Duchoslav
-2025-01-01
+Miloš Duchoslav
+2025-02
 
 - [Introduction](#introduction)
 - [Orthofinder Brassicaceae 2](#orthofinder-brassicaceae-2)
