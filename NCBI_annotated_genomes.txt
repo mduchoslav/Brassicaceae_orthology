@@ -1,5 +1,6 @@
 Arabidopsis lyrata	Arabidopsis_lyrata_NCBI	GCF_000004255.2
 Brassica oleracea	Brassica_oleracea	GCF_000695525.1
+Brassica napus	Brassica_napus	GCF_020379485.1
 Brassica rapa	Brassica_rapa	GCF_000309985.2
 Camelina sativa	Camelina_sativa	GCF_000633955.1
 Capsella rubella	Capsella_rubella	GCF_000375325.1
