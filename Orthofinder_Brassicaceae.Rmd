@@ -668,7 +668,7 @@ old.par<-par(no.readonly = T)
 spec.overlap <- read.table(file = "orthofinder_results/Results_brassicaceae_3/Comparative_Genomics_Statistics/Orthogroups_SpeciesOverlaps.tsv")
 
 ## heatmap with values
-pdf ("R_analysis/Orthogroups_SpeciesOverlaps_heatmap.pdf", width=14, height=7, onefile = T)
+pdf ("figs/Orthogroups_SpeciesOverlaps_heatmap.pdf", width=14, height=7, onefile = T)
 par(mar = c(2, 12, 12, 2) + 0.1)
 # input data
 gdata <- spec.overlap
@@ -694,6 +694,7 @@ axis(side = 2, at = yaxs, labels = rownames(gdata.rev), tick = T, las = 2, cex.a
 text(x = rep(x = xaxs, each = length(yaxs)), y = rep(x = yaxs, times = length(xaxs)), 
      labels = format(as.matrix(gdata.rev), big.mark = " "), 
      cex = 0.8)
+mtext(text = "Diagonal: Number of orthogroups containing species.", side = 1, cex = 0.8)
 par(old.par)
 dev.off()
 
@@ -722,7 +723,7 @@ folder <- "orthofinder_results/Results_brassicaceae_3/Comparative_Genomics_Stati
 file.pattern <- "OrthologuesStats"
 files <- list.files(folder, pattern = file.pattern)
 
-pdf ("R_analysis/Comparative_Genomics_Statistics_heatmaps.pdf", width=14, height=7, onefile = T)
+pdf ("figs/Comparative_Genomics_Statistics_heatmaps.pdf", width=14, height=7, onefile = T)
 par(mar = c(2, 12, 12, 2) + 0.1)
 for(i in 5:1) {
   gdata <- read.table(file = paste0(folder, files[i]))
@@ -752,7 +753,7 @@ per.spec <- read.table(file = "orthofinder_results/Results_brassicaceae_3/Compar
 
 
 ## heatmap with values
-pdf ("R_analysis/Statistics_PerSpecies_heatmap.pdf", width=14, height=7, onefile = T)
+pdf ("figs/Statistics_PerSpecies_heatmap.pdf", width=16, height=7, onefile = T)
 par(mar = c(2, 22, 12, 2) + 0.1)
 # input data
 gdata <- per.spec
@@ -766,7 +767,7 @@ gdata.rev <- gdata[nrow(gdata):1, ]
 # image (simple heat map - heatmap has some strange coordinate system, so it is not useful)
 image(t(as.matrix(gdata.rev.rel)), xaxt = "n", yaxt = "n",
       main = "")
-title(main = "Orthofinder_brassicaceae_2", line = 7)
+title(main = "Statistics per species", line = 7)
 xaxs <- ((1:ncol(gdata.rev))-1)/(ncol(gdata.rev)-1)
 yaxs <- ((1:nrow(gdata.rev))-1)/(nrow(gdata.rev)-1)
 axis(side = 3, at = xaxs, labels = colnames(gdata.rev), las = 2, cex.axis = 0.9)
