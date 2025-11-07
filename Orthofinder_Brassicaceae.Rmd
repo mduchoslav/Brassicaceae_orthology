@@ -42,6 +42,8 @@ Version 3.0 (2025-10)
 	- *Alyssum gmelinii* (assembly is now V3)
 	- *Cardamine glauca* (annotation version is now 1.1)
 	- *Noccaea praecox* (annotation version is now 1.1)
+- Species removed
+	- *Rorippa islandica* (because of restrictions on dataset usage)
 
 
 Version 2.0 (2025-03)
@@ -51,59 +53,69 @@ Version 2.0 (2025-03)
 
 ## Species included in this Orthofinder run
 
-1. *Alyssum gmelinii*
+1. *Aethionema saxatile*
+	- Nezamivand-Chegini Mahnaz, Duchoslav Miloš, ..., Kolar Filip 2025 (to be published)
+2. *Alyssum gmelinii*
 	- Assembly V3 (compared to V2 the assembly included HiC data)
 	- Nezamivand-Chegini Mahnaz, Duchoslav Miloš, ..., Kolar Filip 2025 (unpublished)
-2. *Arabidopsis arenosa*
+3. *Arabidopsis arenosa*
 	- Bramsiepe, Jonathan, Anders K. Krabberød, Katrine N. Bjerkan, Renate M. Alling, Ida M. Johannessen, Karina S. Hornslien, Jason R. Miller, Anne K. Brysting, and Paul E. Grini. “Structural Evidence for MADS-Box Type I Family Expansion Seen in New Assemblies of Arabidopsis Arenosa and A. Lyrata.” The Plant Journal 116, no. 3 (2023): 942–61. <https://doi.org/10.1111/tpj.16401>.
-3. *Arabidopsis lyrata* NCBI
+4. *Arabidopsis lyrata* NCBI
 	- Genome from Hu, Tina T., Pedro Pattyn, Erica G. Bakker, Jun Cao, Jan-Fang Cheng, Richard M. Clark, Noah Fahlgren, et al. “The Arabidopsis Lyrata Genome Sequence and the Basis of Rapid Genome Size Change.” Nature Genetics 43, no. 5 (May 2011): 476–81. <https://doi.org/10.1038/ng.807>.
 	- Annotation from The NCBI Eukaryotic Genome Annotation Pipeline
 	- [GCF_000004255.2](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000004255.2/)
-4. *Arabidopsis lyrata* Rawat
+5. *Arabidopsis lyrata* Rawat
 	- Genome from Hu, Tina T., Pedro Pattyn, Erica G. Bakker, Jun Cao, Jan-Fang Cheng, Richard M. Clark, Noah Fahlgren, et al. “The Arabidopsis Lyrata Genome Sequence and the Basis of Rapid Genome Size Change.” Nature Genetics 43, no. 5 (May 2011): 476–81. <https://doi.org/10.1038/ng.807>.
 	- Annotation from Rawat, Vimal, Ahmed Abdelsamad, Björn Pietzenuk, Danelle K. Seymour, Daniel Koenig, Detlef Weigel, Ales Pecinka, and Korbinian Schneeberger. “Improving the Annotation of Arabidopsis Lyrata Using RNA-Seq Data.” PLOS ONE 10, no. 9 (September 18, 2015): e0137391. <https://doi.org/10.1371/journal.pone.0137391>.
-5. *Arabidopsis thaliana*
+6. *Arabidopsis thaliana*
 	- Araport11 protein sequences (version 2025-04-11) downloaded from [arabidopsis.org](https://www.arabidopsis.org/download/file?path=Proteins/Araport11_protein_lists/Araport11_pep_20250411_representative_gene_model.gz)
-6. *Arabis alpina*
+7. *Arabis alpina*
 	- Jiao, Wen-Biao, Gonzalo Garcia Accinelli, Benjamin Hartwig, Christiane Kiefer, David Baker, Edouard Severing, Eva-Maria Willing, et al. “Improving and Correcting the Contiguity of Long-Read Genome Assemblies of Three Plant Species Using Optical Mapping and Chromosome Conformation Capture Data.” Genome Research 27, no. 5 (May 1, 2017): 778–86. <https://doi.org/10.1101/gr.213652.116>.
 	- Data: <http://www.arabis-alpina.org/refseq.html>, I used the version 5.1 of the genome (later than Jiao et al. 2017)
-7. *Brassica oleracea*
-	- Annotation from The NCBI Eukaryotic Genome Annotation Pipeline
-	- [GCF_000695525.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000695525.1/)
-7. *Brasica napus*
+8. *Brasica napus*
 	- Annotation from The NCBI Eukaryotic Genome Annotation Pipeline
 	- [GCF_020379485.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_020379485.1/)
-8. *Brassica rapa*
+9. *Brassica oleracea*
+	- Annotation from The NCBI Eukaryotic Genome Annotation Pipeline
+	- [GCF_000695525.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000695525.1/)
+10. *Brassica rapa*
 	- Annotation from The NCBI Eukaryotic Genome Annotation Pipeline
 	- [GCF_000309985.2](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000309985.2/)
-9. *Camelina sativa*
+11. *Camelina sativa*
 	- Annotation from The NCBI Eukaryotic Genome Annotation Pipeline
 	- [GCF_000633955.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000633955.1/)
-10. *Capsella rubella*
+12. *Capsella rubella*
 	- Annotation from The NCBI Eukaryotic Genome Annotation Pipeline
 	- [GCF_000375325.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000375325.1/)
-11. *Cardamine glauca*
+13. *Cardamine amara*
+	- Assembly and annotation from Marek Šlenker (to be published)
+14. *Cardamine glauca*
 	- Nezamivand-Chegini Mahnaz, Duchoslav Miloš, ..., Kolar Filip 2025 (to be published)
-12. *Cardamine hirsuta*
+15. *Cardamine hirsuta*
 	- Gan, Xiangchao, Angela Hay, Michiel Kwantes, Georg Haberer, Asis Hallab, Raffaele Dello Ioio, Hugo Hofhuis, et al. “The Cardamine Hirsuta Genome Offers Insight into the Evolution of Morphological Diversity.” Nature Plants 2, no. 11 (October 31, 2016): 1–7. <https://doi.org/10.1038/nplants.2016.167>.
 	- Data: <http://chi.mpipz.mpg.de/assembly.html>
-13. *Cochlearia excelsa*
+16. *Cochlearia excelsa*
 	- Bray, Sian M., Tuomas Hämälä, Min Zhou, Silvia Busoms, Sina Fischer, Stuart D. Desjardins, Terezie Mandáková, et al. “Kinetochore and Ionomic Adaptation to Whole-Genome Duplication in Cochlearia Shows Evolutionary Convergence in Three Autopolyploids.” Cell Reports 43, no. 8 (August 27, 2024). <https://doi.org/10.1016/j.celrep.2024.114576>.
 	- Data: <https://doi.org/10.5061/dryad.ncjsxkt1s>
-14. *Conringia planisiliqua*
+17. *Conringia planisiliqua*
 	- Jiao, Wen-Biao, Gonzalo Garcia Accinelli, Benjamin Hartwig, Christiane Kiefer, David Baker, Edouard Severing, Eva-Maria Willing, et al. “Improving and Correcting the Contiguity of Long-Read Genome Assemblies of Three Plant Species Using Optical Mapping and Chromosome Conformation Capture Data.” Genome Research 27, no. 5 (May 1, 2017): 778–86. <https://doi.org/10.1101/gr.213652.116>.
-15. *Euclidium syriacum*
+18. *Erysimum linariifolium*
+	- Nezamivand-Chegini Mahnaz, Duchoslav Miloš, ..., Kolar Filip 2025 (to be published)
+19. *Euclidium syriacum*
 	- Jiao, Wen-Biao, Gonzalo Garcia Accinelli, Benjamin Hartwig, Christiane Kiefer, David Baker, Edouard Severing, Eva-Maria Willing, et al. “Improving and Correcting the Contiguity of Long-Read Genome Assemblies of Three Plant Species Using Optical Mapping and Chromosome Conformation Capture Data.” Genome Research 27, no. 5 (May 1, 2017): 778–86. <https://doi.org/10.1101/gr.213652.116>.
-16. *Eutrema salsugineum*
+20. *Eutrema salsugineum*
 	- Annotation from The NCBI Eukaryotic Genome Annotation Pipeline
 	- [GCF_000478725.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000478725.1/)
-17. *Noccaea praecox*
+21. *Noccaea praecox*
 	- Nezamivand-Chegini Mahnaz, Duchoslav Miloš, ..., Kolar Filip 2025 (to be published)
-18. *Raphanus sativus*
+22. *Odontarrhena muralis*
+	- Nezamivand-Chegini Mahnaz, Duchoslav Miloš, ..., Kolar Filip 2025 (to be published)
+23. *Raphanus sativus*
 	- Annotation from The NCBI Eukaryotic Genome Annotation Pipeline
 	- [GCF_000801105.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000801105.1/)
-19. *Rorippa islandica*
+
+### Removed from this run
+24. *Rorippa islandica*
 	- <https://phytozome-next.jgi.doe.gov/info/Rislandica_v1_1>
 
 # Preparation of protein sequences
@@ -151,6 +163,13 @@ cp Araport11_pep_20250411_representative_gene_model ../primary_transcripts/Arabi
 # copy from previous run
 cp ../../brassicaceae_1/original_protein_fasta/R_islandica/Phytozome/PhytozomeV13/Rislandica/v1.1/annotation/Rislandica_473_v1.1.protein_primaryTranscriptOnly.fa .
 cp Rislandica_473_v1.1.protein_primaryTranscriptOnly.fa ../primary_transcripts/Rorippa_islandica.fasta
+
+
+## Cardamine amara
+# Genome assembly and annotation from Marek Šlenker
+# Hap2 should be better according to Violette
+cp -v /auto/pruhonice1-ibot/nfs4/home/mslenker/Projects/ref/C_amara.C087_203/C087_203_hap2.longest_isoform.aa .
+cp C087_203_hap2.longest_isoform.aa ../primary_transcripts/Cardamine_amara.fasta
 ```
 
 ## Species anotated at NCBI
@@ -500,8 +519,10 @@ cp -v Odontarrhena_muralis_CUNI_V1_annotation_v1.0_proteins.fasta ../renamed_pro
 ## Alyssum gmelinii
 # Genome assembly and annotation:
 # Nezamivand-Chegini Mahnaz, Duchoslav Milos, ..., Kolar Filip 2025 (unpublished)
-cp -v /storage/brno12-cerit/home/duchmil/annotations/????/annot_processing/??? .
-cp -v ??? ../renamed_protein_fasta_other/Alyssum_gmelinii.fasta
+cp -v /storage/brno12-cerit/home/duchmil/annotations/Alyssum_gmelinii_2025_10_V3/annot_processing/Alyssum_gmelinii_CUNI_V3_annotation_v3.0_proteins.fasta .
+cp -v Alyssum_gmelinii_CUNI_V3_annotation_v3.0_proteins.fasta ../renamed_protein_fasta_other/Alyssum_gmelinii.fasta
+
+
 
 ```
 
@@ -515,11 +536,11 @@ cp -v ??? ../renamed_protein_fasta_other/Alyssum_gmelinii.fasta
 module add python36-modules-gcc
 
 # test that Orthofinder is running
-~/orthofinder/OrthoFinder_source/orthofinder.py -h
+/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/OrthoFinder_source/orthofinder.py -h
 
 ## taking only the longest transcript using Orthofinder script
-cd ~/orthofinder/brassicaceae_1/renamed_protein_fasta_other/
-for f in *.fasta ; do python ~/orthofinder/OrthoFinder_source/tools/primary_transcript.py $f ; done
+cd /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/renamed_protein_fasta_other/
+for f in *.fasta ; do python /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/OrthoFinder_source/tools/primary_transcript.py $f ; done
 # Note: This does not work properly for NCBI data.
 
 # This did not remove any transcripts from Cochlearia_excelsa, however, there were probably already only primary transcripts (see before).
@@ -529,28 +550,27 @@ for f in *.fasta ; do python ~/orthofinder/OrthoFinder_source/tools/primary_tran
 cp -v primary_transcripts/*.fasta ../primary_transcripts/
 ```
 
+### Removing Rorippa
+```{sh}
+cd /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/primary_transcripts/
+```
 
-## Extraction of primary transcripts using Orthofinder script
-```{bash}
-### Extraction of primary transcripts using Orthofinder script
+## Cleaning fasta files
 
-# loading Python and the modules needed
-# module load python
-module add python36-modules-gcc
+A. thaliana fasta file contains non-ASCII character which is needed to be removed.
+```{sh}
+cd /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/primary_transcripts
 
-# test that Orthofinder is running
-~/orthofinder/OrthoFinder_source/orthofinder.py -h
+# Show the problematic character
+grep --color='auto' -P -n "[^\x00-\x7F]" *
+grep --color='auto' -P -n "[^\x00-\x7F]" * | iconv -f utf-8 -t ascii//TRANSLIT
 
-## taking only the longest transcript using Orthofinder script
-cd ~/orthofinder/brassicaceae_2/renamed_protein_fasta_other/
-for f in *.fasta ; do python ~/orthofinder/OrthoFinder_source/tools/primary_transcript.py $f ; done
-# Note: This does not work properly for NCBI data.
+iconv -f utf-8 -t ascii//TRANSLIT Arabidopsis_thaliana.fasta -o Arabidopsis_thaliana_clean.fasta
 
-# This did not remove any transcripts from Cochlearia_excelsa, however, there were probably already only primary transcripts (see before).
+diff Arabidopsis_thaliana.fasta Arabidopsis_thaliana_clean.fasta
 
+mv Arabidopsis_thaliana_clean.fasta Arabidopsis_thaliana.fasta
 
-# Copying files
-cp -v primary_transcripts/*.fasta ../primary_transcripts/
 ```
 
 
@@ -558,41 +578,46 @@ cp -v primary_transcripts/*.fasta ../primary_transcripts/
 
 # Orthofinder run
 
-## brassicaceae_2 run
+## Brassicaceae_3 run
 
-18 species, 19 input files (two different annotations for Arabidopsis_lyrata)  
+22 species, 23 input files (two different annotations for Arabidopsis_lyrata)  
 Input fasta files:
 
+Aethionema_saxatile.fasta
 Alyssum_gmelinii.fasta
 Arabidopsis_arenosa.fasta
 Arabidopsis_lyrata_NCBI.fasta
 Arabidopsis_lyrata_Rawat.fasta
 Arabidopsis_thaliana.fasta
 Arabis_alpina.fasta
+Brassica_napus.fasta
 Brassica_oleracea.fasta
 Brassica_rapa.fasta
 Camelina_sativa.fasta
 Capsella_rubella.fasta
+Cardamine_amara.fasta
 Cardamine_glauca.fasta
 Cardamine_hirsuta.fasta
 Cochlearia_excelsa.fasta
 Conringia_planisiliqua.fasta
+Erysimum_linariifolium.fasta
 Euclidium_syriacum.fasta
 Eutrema_salsugineum.fasta
 Noccaea_praecox.fasta
+Odontarrhena_muralis.fasta
 Raphanus_sativus.fasta
-Rorippa_islandica.fasta
+
 
 ```{bash}
 ### Metacentrum script
 
-#PBS -N orthofinder_brassicaceae_2
+#PBS -N orthofinder_brassicaceae
 #PBS -l select=1:ncpus=8:mem=32gb:scratch_local=200gb
 #PBS -l walltime=23:50:00 
 #PBS -m ae
 
 # define a DATADIR variable: directory where the input files are taken from and where output will be copied to
-DATADIR=/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_2
+DATADIR=/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3
 
 # append a line to a file "jobs_info.txt" containing the ID of the job, the hostname of node it is run on and the path to a scratch directory
 # this information helps to find a scratch directory in case the job fails and you need to remove the scratch directory manually 
@@ -616,7 +641,7 @@ cp -r $DATADIR/primary_transcripts $SCRATCHDIR || { echo >&2 "Error while copyin
 cd $SCRATCHDIR 
 
 # running OrthoFinder
-$SCRATCHDIR/OrthoFinder_source/orthofinder.py -y -t 8 -f $SCRATCHDIR/primary_transcripts/ -o orthofinder_results -n brassicaceae_2
+$SCRATCHDIR/OrthoFinder_source/orthofinder.py -y -t 8 -f $SCRATCHDIR/primary_transcripts/ -o orthofinder_results -n brassicaceae_3
 
 # move the output to user's DATADIR or exit in case of failure
 cp -r orthofinder_results $DATADIR/ || { echo >&2 "Result file(s) copying failed (with a code $?) !!"; exit 4; }
@@ -624,20 +649,7 @@ cp -r orthofinder_results $DATADIR/ || { echo >&2 "Result file(s) copying failed
 # clean the SCRATCH directory
 clean_scratch
 
-# Resources used: 7 h, 54% CPU, 11 GB memory.
-```
-
-
-```{bash}
-### brassicaceae_2 run
-cd /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_2/metacentrum_scripts/
-
-# putting the job in the queue
-qsub orthofinder_brassicaceae_2.bash
-
-qstat -u duchmil
-
-
+# Resources used: 5 h 43 min, 53% CPU, 16 GB memory.
 ```
 
 
@@ -650,10 +662,10 @@ qstat -u duchmil
 
 
 ```{r}
-setwd("D:/!ecolgen/resources/orthofinder/brassicaceae_2/")
+setwd("D:/!ecolgen/Brassicaceae_orthology/brassicaceae_3")
 old.par<-par(no.readonly = T)
 
-spec.overlap <- read.table(file = "orthofinder_results/Results_brassicaceae_2/Comparative_Genomics_Statistics/Orthogroups_SpeciesOverlaps.tsv")
+spec.overlap <- read.table(file = "orthofinder_results/Results_brassicaceae_3/Comparative_Genomics_Statistics/Orthogroups_SpeciesOverlaps.tsv")
 
 ## heatmap with values
 pdf ("R_analysis/Orthogroups_SpeciesOverlaps_heatmap.pdf", width=14, height=7, onefile = T)
@@ -706,7 +718,7 @@ dev.off()
 ### Orthologues statistics
 
 ```{r}
-folder <- "orthofinder_results/Results_brassicaceae_2/Comparative_Genomics_Statistics/"
+folder <- "orthofinder_results/Results_brassicaceae_3/Comparative_Genomics_Statistics/"
 file.pattern <- "OrthologuesStats"
 files <- list.files(folder, pattern = file.pattern)
 
@@ -736,7 +748,7 @@ dev.off()
 
 ### Statistics per species
 ```{r}
-per.spec <- read.table(file = "orthofinder_results/Results_brassicaceae_2/Comparative_Genomics_Statistics/Statistics_PerSpecies.tsv", sep = "\t", quote = "", header = T, row.names = 1, nrows = 10)
+per.spec <- read.table(file = "orthofinder_results/Results_brassicaceae_3/Comparative_Genomics_Statistics/Statistics_PerSpecies.tsv", sep = "\t", quote = "", header = T, row.names = 1, nrows = 10)
 
 
 ## heatmap with values
