@@ -93,15 +93,15 @@ The code for the paper is at Sian Bray's [GitHub](https://github.com/Sian-Bray/C
 # done
 
 # define variables
-query_fasta="/storage/brno12-cerit/home/duchmil/orthofinder/brassicaceae_2/primary_transcripts/$species.fasta"
-target_fasta=/storage/brno12-cerit/home/duchmil/orthofinder/brassicaceae_2/primary_transcripts/Arabidopsis_thaliana.fasta
+query_fasta="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/primary_transcripts/$species.fasta"
+target_fasta="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/primary_transcripts/Arabidopsis_thaliana.fasta"
 # outfmt=0
 outfmt='7 qaccver saccver pident length mismatch gapopen qstart qend sstart send evalue bitscore qcovhsp qlen slen'
 # -outfmt 0 = Pairwise
 # -outfmt 6 = Tabular
 # -outfmt 7 = Tabular with comment lines
 output_file=$species"_vs_Arabidopsis_thaliana_all_Vs_all_eval_0.1.tsv"
-output_dir=/storage/brno12-cerit/home/duchmil/orthofinder/brassicaceae_2/blast_results
+output_dir=/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/blast_results
 
 
 # append a line to a file "jobs_info.txt" containing the ID of the job, the hostname of node it is run on and the path to a scratch directory
@@ -147,13 +147,13 @@ echo "Copying output file $output_file to $output_dir done." | ts '[%Y-%m-%d %H:
 # clean the SCRATCH directory
 clean_scratch
 
-# Resources used: 14-19 min, 83-99% CPU, 500-600 MB memory.
+# Resources used: Up to 46 min (mostly 11-20 min), 64-99% CPU, up to 1 GB memory.
 ```
 
 ```{bash}
-cd /storage/brno12-cerit/home/duchmil/orthofinder/brassicaceae_2/metacentrum_scripts
+cd /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/metacentrum_scripts
 
-for species in Alyssum_gmelinii Arabidopsis_arenosa Arabidopsis_lyrata_NCBI Cardamine_glauca Noccaea_praecox
+for species in Aethionema_saxatile Alyssum_gmelinii Arabidopsis_arenosa Arabidopsis_lyrata_NCBI Arabidopsis_lyrata_Rawat Arabis_alpina Brassica_napus Brassica_oleracea Brassica_rapa Camelina_sativa Capsella_rubella Cardamine_amara Cardamine_glauca Cardamine_hirsuta Cochlearia_excelsa Conringia_planisiliqua Erysimum_linariifolium Euclidium_syriacum Eutrema_salsugineum Noccaea_praecox Odontarrhena_muralis Raphanus_sativus
 do
 echo "Submitting job for species: $species"
 qsub  -v "species=$species" blast_species_vs_Arabidopsis_thaliana.bash
@@ -162,7 +162,7 @@ done
 ```
 
 ```{bash}
-cd /storage/brno12-cerit/home/duchmil/orthofinder/brassicaceae_2/blast_results
+cd /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/blast_results
 # compress the result
 gzip *_vs_Arabidopsis_thaliana_all_Vs_all_eval_0.1.tsv
 ```
@@ -217,7 +217,7 @@ tabular output).
 
 #PBS -N blast_RBH_species_vs_Arabidopsis_thaliana
 #PBS -l select=1:ncpus=8:mem=4gb:scratch_local=20gb
-#PBS -l walltime=2:00:00 
+#PBS -l walltime=4:00:00 
 #PBS -m ae
 
 ## It is needed to set the $species variable during submitting the job like this:
@@ -229,10 +229,10 @@ tabular output).
 
 # define variables
 # It is reciprocal here, so it does not matter which is query and which target.
-query_fasta="/storage/brno12-cerit/home/duchmil/orthofinder/brassicaceae_2/primary_transcripts/$species.fasta"
-target_fasta=/storage/brno12-cerit/home/duchmil/orthofinder/brassicaceae_2/primary_transcripts/Arabidopsis_thaliana.fasta
+query_fasta="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/primary_transcripts/$species.fasta"
+target_fasta="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/primary_transcripts/Arabidopsis_thaliana.fasta"
 output_file=$species"_vs_Arabidopsis_thaliana_rbh-i70-c50.txt"
-output_dir=/storage/brno12-cerit/home/duchmil/orthofinder/brassicaceae_2/blast_results
+output_dir=/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/blast_results
 
 
 # append a line to a file "jobs_info.txt" containing the ID of the job, the hostname of node it is run on and the path to a scratch directory
@@ -279,9 +279,9 @@ clean_scratch
 ```
 
 ```{bash}
-cd /storage/brno12-cerit/home/duchmil/orthofinder/brassicaceae_2/metacentrum_scripts
+cd /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/metacentrum_scripts
 
-for species in Alyssum_gmelinii Arabidopsis_arenosa Arabidopsis_lyrata_NCBI Cardamine_glauca Noccaea_praecox
+for species in Aethionema_saxatile Alyssum_gmelinii Arabidopsis_arenosa Arabidopsis_lyrata_NCBI Arabidopsis_lyrata_Rawat Arabis_alpina Brassica_napus Brassica_oleracea Brassica_rapa Camelina_sativa Capsella_rubella Cardamine_amara Cardamine_glauca Cardamine_hirsuta Cochlearia_excelsa Conringia_planisiliqua Erysimum_linariifolium Euclidium_syriacum Eutrema_salsugineum Noccaea_praecox Odontarrhena_muralis Raphanus_sativus
 do
 echo "Submitting job for species: $species"
 qsub  -v "species=$species" blast_RBH_species_vs_Arabidopsis_thaliana.bash
@@ -293,7 +293,7 @@ done
 
 
 ```{bash}
-cd /storage/brno12-cerit/home/duchmil/orthofinder/brassicaceae_2/blast_results
+cd /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/blast_results
 wc -l *_vs_Arabidopsis_thaliana_rbh-i70-c50.txt
 
 
@@ -323,7 +323,7 @@ R scripts for compilation of results from the different sources.
 ### Load functions etc.
 
 ```{r}
-setwd("D:/!ecolgen/resources/orthofinder/brassicaceae_2/")
+setwd("D:/!ecolgen/Brassicaceae_orthology/brassicaceae_3")
 old.par<-par(no.readonly = T)
 
 
@@ -395,15 +395,26 @@ df.split <- function(x, col.split, split = ", ") {
 #   }
 #   return(x.split)
 # #}
+
+
+### Function for printing messages with time stamps
+
+# Arguments:
+# ... - Anything that will be pasted after the time stamp.
+# sep - Separator of the arguments printed after the time stamp. Defaults to space.
+
+t.print <- function(..., sep = " ") {
+    print(paste0("[", format(x = Sys.time(), format = "%Y-%m-%d %H:%M:%S"), "] ", paste(..., sep = sep)))
+  }
 ```
 
 ### Reading common files
 ```{r}
-o.groups_a <- read.table(file = "orthofinder_results/Results_brassicaceae_2/Phylogenetic_Hierarchical_Orthogroups/N0.tsv", sep = "\t", header = T)
+o.groups_a <- read.table(file = "orthofinder_results/Results_brassicaceae_3/Phylogenetic_Hierarchical_Orthogroups/N0.tsv", sep = "\t", header = T)
 
 colnames(o.groups_a)
 
-o.groups_b <- read.table(file = "orthofinder_results/Results_brassicaceae_2/Orthogroups/Orthogroups.tsv", sep = "\t", header = T)
+o.groups_b <- read.table(file = "orthofinder_results/Results_brassicaceae_3/Orthogroups/Orthogroups.tsv", sep = "\t", header = T)
 ```
 
 
@@ -428,10 +439,18 @@ stats.ortho <- data.frame()
 
 for(one.species in species) {
   
-  
+  # Save console output to log file
+	dir.create(path = "supplemented_orthologues/logs", recursive = T, showWarnings = F)
+	log.file <- file(paste0("supplemented_orthologues/logs/", one.species, "_supplementing_orthologues.log"), open = "wt")
+  sink(file = log.file, split = T)
+  sink(file = log.file, type = "message")
+
   
   ### Orthologues table from Orthofinder
-  ortho1 <- read.table(file = paste0("orthofinder_results/Results_brassicaceae_2/Orthologues/Orthologues_", 
+  
+  t.print("Reading orthologues table for", one.species)
+  
+  ortho1 <- read.table(file = paste0("orthofinder_results/Results_brassicaceae_3/Orthologues/Orthologues_", 
                                      one.species, "/", one.species, "__v__Arabidopsis_thaliana.tsv"), 
                        sep = "\t", header = T)
   # remove "Orthogroup" column, it same as in `Orthogroups/Orthogroups.tsv`
@@ -444,13 +463,15 @@ for(one.species in species) {
   
   ### Supplementing orthologues from `Phylogenetic_Hierarchical_Orthogroups/N0.tsv`
   
+  t.print("Supplementing orthologues from `Phylogenetic_Hierarchical_Orthogroups/N0.tsv` for", one.species)
+  
   # choosing right columns
   # (the df.split function is then much faster)
   # Also OG is not needed, it is always the same as in `Orthogroups/Orthogroups.tsv`
   o.groups_a_2 <- o.groups_a[, c("HOG", one.species, "Arabidopsis_thaliana")]
   colnames(o.groups_a_2) <- c("N0_HOG", one.species, "N0_Arabidopsis_thaliana")
   
-  # rows with both arenosa and thaliana genes
+  # rows with both target species and thaliana genes
   o.groups.a.t_a <- o.groups_a_2[o.groups_a_2[, one.species] != "" & o.groups_a_2$N0_Arabidopsis_thaliana != "", ]
   
   # splitting lines to have one gene of the desired species per line
@@ -463,6 +484,8 @@ for(one.species in species) {
   
   ### Supplementing orthologues from `Orthogroups/Orthogroups.tsv`
   
+  t.print("Supplementing orthologues from `Orthogroups/Orthogroups.tsv` for", one.species)
+  
   # choosing right columns
   # (the df.split function is then much faster)
   o.groups_b_2 <- o.groups_b[, c("Orthogroup", one.species, "Arabidopsis_thaliana")]
@@ -470,7 +493,7 @@ for(one.species in species) {
   # colnames(o.groups_b)
   # colnames(o.groups_b_2)
   
-  # rows with both arenosa and thaliana genes
+  # rows with both target species and thaliana genes
   o.groups.a.t_b <- o.groups_b_2[o.groups_b_2[, one.species] != "" & o.groups_b_2$OG_Arabidopsis_thaliana != "", ]
   
   # splitting lines to have one gene of the desired species per line
@@ -482,6 +505,8 @@ for(one.species in species) {
   
   
   ### Merging with blast RBH table
+  
+  t.print("Merging with blast RBH table for", one.species)
   
   # read Blast reciprocal best hits (RBH)
   rbh.pre <- read.table(file = paste0("blast_results/", one.species, "_vs_Arabidopsis_thaliana_rbh-i70-c50.txt"), sep = "\t", header = T, comment.char = "")
@@ -505,7 +530,7 @@ for(one.species in species) {
   # # for rows with single thaliana orthologues
   # sum(ortho.big.3$Arabidopsis_thaliana == ortho.big.3$RBH_B_id, na.rm = T) # 20448
   # # also for rows with multiple thaliana orthologues
-  # # it might not work for rows with multiple arenosa RBH (the identical ones)
+  # # it might not work for rows with multiple target species RBH (the identical ones)
   # sum(mapply(FUN = grepl, pattern = ortho.big.3$RBH_B_id, x = ortho.big.3$Arabidopsis_thaliana), na.rm = T) # 20879
   # 
   # # Where Orthofinder orthologues and blast RBH differ?
@@ -517,13 +542,17 @@ for(one.species in species) {
   
   ### Merging with simple Blast results
   
+  t.print("Merging with simple Blast results for", one.species)
+  
   # read Blast results
   blast1 <- read.table(file = gzfile(paste0("blast_results/", one.species, "_vs_Arabidopsis_thaliana_all_Vs_all_eval_0.1.tsv.gz")), sep = "\t", header = F, comment.char = "#")
   
   colnames(blast1) <- c("qaccver", "saccver", "pident", "length", "mismatch", "gapopen", "qstart", "qend", "sstart", "send", "evalue", "bitscore", "qcovhsp", "qlen", "slen")
   # Fields: query acc.ver, subject acc.ver, % identity, alignment length, mismatches, gap opens, q. start, q. end, s. start, s. end, evalue, bit score, % query coverage per hsp, query length, subject length
   
-  ## loop to choose the bast hits for each query (arenosa) gene
+  ## loop to choose the best hits for each query (target species) gene
+  
+  t.print("loop to choose the best hits for each query (target species) gene")
   
   # It chooses now based on best bitscore, but can be modified.
   # The query genes must be ordered (the same ones in successive rows), but it is faster like this than looking for the right rows through the whole data.frame.
@@ -541,7 +570,7 @@ for(one.species in species) {
     while(blast1$qaccver[i] == query & i <= nrow(blast1)) {
       i <- i + 1
       # Report on speed of processing
-      if(i %% 10000 == 0) print(paste("Processed", i, "rows"))
+      if(i %% 10000 == 0) print(paste("Processed", i, "rows out of", nrow(blast1)))
     }
     q.end <- i - 1
     # extract rows for particular query gene
@@ -561,6 +590,8 @@ for(one.species in species) {
   
   ## loop to merge rows for query genes with multiple best hits
   
+  t.print("loop to merge rows for query genes with multiple best hits")
+  
   # Hit names will be collapsed (separated by ", "), the other values will be used from the first hit.
   
   # remove the object if it exists (otherwise it will just append new lines)
@@ -578,7 +609,7 @@ for(one.species in species) {
     while(blast.single.1$qaccver[i] == query & i <= nrow(blast.single.1)) {
       i <- i + 1
       # Report on speed of processing
-      if(i %% 10000 == 0) print(paste("Processed", i, "rows"))
+      if(i %% 5000 == 0) print(paste("Processed", i, "rows out of", nrow(blast.single.1)))
     }
     q.end <- i - 1
     # extract rows for particular query gene
@@ -605,6 +636,8 @@ for(one.species in species) {
   
   
   ### Final selection of orthologues
+  
+  t.print("Final selection of orthologues for", one.species)
   
   ortho.big.5 <- ortho.big.4
   
@@ -678,31 +711,36 @@ for(one.species in species) {
   # transfering the orthologues that are already single
   ortho.big.5$single_Arabidopsis_thaliana[!grepl(pattern = ", ", x = ortho.big.5$Arabidopsis_thaliana)] <- ortho.big.5$Arabidopsis_thaliana[!grepl(pattern = ", ", x = ortho.big.5$Arabidopsis_thaliana)]
   
-  # Loop or choosing best orthologue/homologue if there are multiple
+  # Loop for choosing best orthologue/homologue if there are multiple
+  
+  t.print("loop for choosing best orthologue/homologue if there are multiple")
+  
   for(i in grep(pattern = ", ", x = ortho.big.5$Arabidopsis_thaliana)) {
-    gene.row <- ortho.big.5[i, ]
-    split.ortho <- unlist(strsplit(x = gene.row$Arabidopsis_thaliana, split = ", "))
-    # If there is one and only RBH and it is among orthologues, take the RBH
-    if(!is.na(gene.row$RBH_B_id) & !grepl(pattern = ", ", x = gene.row$RBH_B_id) & gene.row$RBH_B_id %in% split.ortho) {
-      # if(!gene.row$RBH_B_id %in% split.ortho) print(paste(gene.row$Arabidopsis_arenosa, ": RBH is not among orthologues"))
-      s.ortho <- gene.row$RBH_B_id
-    } else {
-      # Else find the results from simple BLAST for this gene and find the orthologues among the hits
-      sub.blast <- blast1[blast1$qaccver == gene.row[, one.species] & 
-                            blast1$saccver %in% split.ortho, ]
-      # If the orthologues are missing among BLAST hits, print warning.
-      if(nrow(sub.blast) == 0) {
-        print(paste0(gene.row[, one.species], ": Missing orthologue among BLAST hits"))
-        s.orth <- NA
-      } else {
-        # Else take the hit with the highest bitscore. If several have the highest, it will take the first.
-        s.ortho <- sub.blast$saccver[sub.blast$bitscore == max(sub.blast$bitscore)][1]
-      }
-    }
-    ortho.big.5$single_Arabidopsis_thaliana[i] <- s.ortho
+  	gene.row <- ortho.big.5[i, ]
+  	split.ortho <- unlist(strsplit(x = gene.row$Arabidopsis_thaliana, split = ", "))
+  	# If there is one and only RBH and it is among orthologues, take the RBH
+  	if(!is.na(gene.row$RBH_B_id) & !grepl(pattern = ", ", x = gene.row$RBH_B_id) & gene.row$RBH_B_id %in% split.ortho) {
+  		# if(!gene.row$RBH_B_id %in% split.ortho) print(paste(gene.row$Arabidopsis_arenosa, ": RBH is not among orthologues"))
+  		s.ortho <- gene.row$RBH_B_id
+  	} else {
+  		# Else find the results from simple BLAST for this gene and find the orthologues among the hits
+  		sub.blast <- blast1[blast1$qaccver == gene.row[, one.species] & 
+  													blast1$saccver %in% split.ortho, ]
+  		# If the orthologues are missing among BLAST hits, print warning.
+  		if(nrow(sub.blast) == 0) {
+  			print(paste0(gene.row[, one.species], ": Missing orthologue among BLAST hits"))
+  			s.orth <- NA
+  		} else {
+  			# Else take the hit with the highest bitscore. If several have the highest, it will take the first.
+  			s.ortho <- sub.blast$saccver[sub.blast$bitscore == max(sub.blast$bitscore)][1]
+  		}
+  	}
+  	ortho.big.5$single_Arabidopsis_thaliana[i] <- s.ortho
   }
   
-  
+  # how genes without assigned orthologues do we have?
+  stats.ortho[11, "legend"] <- "Genes without orthologues/homologues"
+  stats.ortho[11, one.species] <- sum(is.na(ortho.big.5$Arabidopsis_thaliana))
   
   # reordering columns
   colnames(ortho.big.5)
@@ -713,22 +751,76 @@ for(one.species in species) {
   
   ### Exporting results
   
-  write.table(x = ortho.big.6, file = paste0("R_analysis/", one.species, "__v__Arabidopsis_thaliana_supplemented.tsv"), sep = "\t", row.names = F)
+  t.print("Exporting tables for", one.species)
   
+  dir.create(path = "supplemented_orthologues", recursive = T, showWarnings = F)
+  write.table(x = ortho.big.6, file = paste0("supplemented_orthologues/", one.species, "__v__Arabidopsis_thaliana_supplemented.tsv"), sep = "\t", row.names = F)
   
+  t.print(one.species, "done.")
+  
+  # Stop saving output to log file
+  sink(type = "message")
+  sink()
   
 }
 ### End of the big loop
 
 
 ### Exporting table with statistics
-write.table(x = stats.ortho, file = "R_analysis/supplementing_orthologues_stats.tsv", sep = "\t", row.names = F)
+dir.create(path = "supplemented_orthologues/stats", recursive = T, showWarnings = F)
+write.table(x = stats.ortho, file = "supplemented_orthologues/stats/supplementing_orthologues_stats.tsv", sep = "\t", row.names = F)
 
 ```
 
 
 
+```{r}
+species <- species[-c(1,2)]
 
+
+
+# Example loop
+for (i in 1:5) {
+  # Create a log file for each iteration
+  log_filename <- paste0("log_iteration_", i, ".txt")
+  
+  # Redirect output to the log file
+  sink(log_filename)
+  # Redirect warnings to the same log file
+  sink(log_filename, type = "message")
+  
+  # Print some output (this will go to the log file)
+  print(paste("This is iteration", i))
+  
+  # Generate a warning for demonstration (this will also go to the log file)
+  if (i %% 2 == 0) {
+    warning("This is a warning!")
+  }
+  
+  # More output can be printed here
+  print(paste("Random number:", runif(1)))
+  
+  # Stop redirecting output (this will stop saving the output to the log file)
+  sink()
+  sink(type = "message")
+}
+
+
+
+## capture all the output to a file.
+zz <- file("all.Rout", open = "wt")
+sink(zz)
+sink(zz, type = "message")
+try(log("a"))
+## revert output back to the console -- only then access the file!
+sink(type = "message")
+sink()
+file.show("all.Rout")
+```
+
+
+
+# End
 
 
 

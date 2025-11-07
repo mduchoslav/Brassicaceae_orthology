@@ -13,15 +13,15 @@
 # done
 
 # define variables
-query_fasta="/storage/brno12-cerit/home/duchmil/orthofinder/brassicaceae_2/primary_transcripts/$species.fasta"
-target_fasta=/storage/brno12-cerit/home/duchmil/orthofinder/brassicaceae_2/primary_transcripts/Arabidopsis_thaliana.fasta
+query_fasta="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/primary_transcripts/$species.fasta"
+target_fasta="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/primary_transcripts/Arabidopsis_thaliana.fasta"
 # outfmt=0
 outfmt='7 qaccver saccver pident length mismatch gapopen qstart qend sstart send evalue bitscore qcovhsp qlen slen'
 # -outfmt 0 = Pairwise
 # -outfmt 6 = Tabular
 # -outfmt 7 = Tabular with comment lines
 output_file=$species"_vs_Arabidopsis_thaliana_all_Vs_all_eval_0.1.tsv"
-output_dir=/storage/brno12-cerit/home/duchmil/orthofinder/brassicaceae_2/blast_results
+output_dir=/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/blast_results
 
 
 # append a line to a file "jobs_info.txt" containing the ID of the job, the hostname of node it is run on and the path to a scratch directory

@@ -2,7 +2,7 @@
 
 #PBS -N blast_RBH_species_vs_Arabidopsis_thaliana
 #PBS -l select=1:ncpus=8:mem=4gb:scratch_local=20gb
-#PBS -l walltime=2:00:00 
+#PBS -l walltime=4:00:00 
 #PBS -m ae
 
 ## It is needed to set the $species variable during submitting the job like this:
@@ -14,10 +14,10 @@
 
 # define variables
 # It is reciprocal here, so it does not matter which is query and which target.
-query_fasta="/storage/brno12-cerit/home/duchmil/orthofinder/brassicaceae_2/primary_transcripts/$species.fasta"
-target_fasta=/storage/brno12-cerit/home/duchmil/orthofinder/brassicaceae_2/primary_transcripts/Arabidopsis_thaliana.fasta
+query_fasta="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/primary_transcripts/$species.fasta"
+target_fasta="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/primary_transcripts/Arabidopsis_thaliana.fasta"
 output_file=$species"_vs_Arabidopsis_thaliana_rbh-i70-c50.txt"
-output_dir=/storage/brno12-cerit/home/duchmil/orthofinder/brassicaceae_2/blast_results
+output_dir=/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/blast_results
 
 
 # append a line to a file "jobs_info.txt" containing the ID of the job, the hostname of node it is run on and the path to a scratch directory
