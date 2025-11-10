@@ -429,6 +429,7 @@ blast.files <- list.files(path = "blast_results/", pattern = ".tsv.gz")
 species <- sub(pattern = "_vs_Arabidopsis_thaliana_all_Vs_all_eval_0.1.tsv.gz", replacement = "", x = blast.files, fixed = T)
 
 # chosen species for testing of the loop
+one.species <- "Aethionema_saxatile"
 one.species <- "Alyssum_gmelinii"
 
 # Prepare dataframe for statistics
@@ -761,7 +762,7 @@ for(one.species in species) {
   # Stop saving output to log file
   sink(type = "message")
   sink()
-  
+  close(log.file)
 }
 ### End of the big loop
 
@@ -776,6 +777,7 @@ write.table(x = stats.ortho, file = "supplemented_orthologues/stats/supplementin
 
 ```{r}
 species <- species[-c(1,2)]
+species <- species[1]
 
 
 
@@ -816,6 +818,7 @@ try(log("a"))
 sink(type = "message")
 sink()
 file.show("all.Rout")
+close(zz)
 ```
 
 
