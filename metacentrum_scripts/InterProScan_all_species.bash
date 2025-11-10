@@ -15,8 +15,8 @@
 echo "Species for this job: $species"
 
 # define variables
-query_fasta="/storage/brno12-cerit/home/duchmil/orthofinder/brassicaceae_2/interproscan/primary_transcripts_without_stops/$species.fasta"
-output_dir=/storage/brno12-cerit/home/duchmil/orthofinder/brassicaceae_2/interproscan
+query_fasta="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/interproscan/primary_transcripts_without_stops/$species.fasta"
+output_dir=/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/interproscan
 
 # append a line to a file "jobs_info.txt" containing the ID of the job, the hostname of node it is run on and the path to a scratch directory
 # this information helps to find a scratch directory in case the job fails and you need to remove the scratch directory manually 
@@ -31,9 +31,10 @@ cd $SCRATCHDIR
 
 # load Java
 module load openjdk
+module list
 
 # run InterProScan
-/storage/brno12-cerit/home/duchmil/SW/InterProScan/interproscan-5.72-103.0/interproscan.sh --goterms --pathways --enable-tsv-residue-annot --tempdir $SCRATCHDIR --cpu 8 -i $query_fasta --output-file-base $species
+/storage/brno12-cerit/home/duchmil/SW/InterProScan/interproscan-5.76-107.0/interproscan.sh --goterms --pathways --enable-tsv-residue-annot --tempdir $SCRATCHDIR --cpu 8 -i $query_fasta --output-file-base $species
 
 echo "Main calculation done." | ts '[%Y-%m-%d %H:%M:%S]'
 
