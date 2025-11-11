@@ -149,7 +149,7 @@ echo "Copying output file to $output_dir done." | ts '[%Y-%m-%d %H:%M:%S]'
 # clean the SCRATCH directory
 clean_scratch
 
-# Resources: 9-10 h, 60-80 % CPU, 57-70 GB memory.
+# Resources: From 2 h (A. thaliana, probably most precomputed results) up to 24 h (Cochlearia excelsa, many proteins). For most around 10 h, 60-90 % CPU, 50-96 GB memory.
 
 ```
 
@@ -175,19 +175,16 @@ done
 cd /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/interproscan
 
 # view beginning as table
-head -n 1000 Arabidopsis_arenosa.tsv | column -t -s $'\t' |  less -S
+zcat Arabidopsis_arenosa.tsv.gz | head -n 1000 | column -t -s $'\t' |  less -S
 
-wc -l Arabidopsis_arenosa.tsv # 313362
+zcat Arabidopsis_arenosa.tsv.gz | wc -l # 315161 (older run with older version of Interproscan: 313362)
 
-cat Arabidopsis_arenosa.tsv | cut -f 1 | sort | uniq | wc -l # 31111 (out of 33901 proteins)
-
-# compress for transfer
-gzip --keep Arabidopsis_arenosa.tsv
+zcat Arabidopsis_arenosa.tsv.gz | cut -f 1 | sort | uniq | wc -l # 31121 (out of 33901 proteins) (older run with older version of Interproscan: 31111)
 
 # sites
-less -S Arabidopsis_arenosa.tsv.sites
+zless -S Arabidopsis_arenosa.tsv.sites.gz
 
-cat Arabidopsis_arenosa.tsv.sites | cut -f 1 | sort | uniq | wc -l # 11261 (out of 33901 proteins)
+zcat Arabidopsis_arenosa.tsv.sites.gz | cut -f 1 | sort | uniq | wc -l # 11409 (out of 33901 proteins)
 ```
 #### TSV description
 https://interproscan-docs.readthedocs.io/en/latest/OutputFormats.html
@@ -247,6 +244,8 @@ The TSV format presents the match data in columns as follows:
 
 # Functional annotations of Arabidopsis thaliana orthologs
 
+## Functions
+
 ```{r}
 # Extracting of gene/protein anotations from several sources
 
@@ -254,7 +253,7 @@ The TSV format presents the match data in columns as follows:
 # There can be several genes collapsed to one line. In such case, the script collapses also the annotations, if they differ (and can write there the ids for which the annotations apply).
 
 
-setwd("D:/!ecolgen/resources/orthofinder/brassicaceae_2/")
+setwd("D:/!ecolgen/Brassicaceae_orthology/brassicaceae_3/")
 old.par<-par(no.readonly = T)
 
 
@@ -320,6 +319,95 @@ gene.properties <- function(x, table, feature, split = ", ", gene.details = T, c
 }
 
 
+# Vectorized, grep-like, no-sapply version
+gene.properties_vec <- function(ids_vec,
+                                table,
+                                feature,
+                                split = ", ",
+                                gene.details = TRUE,
+                                collapse = ", ",
+                                ignore.case = TRUE,
+                                perl = TRUE) {
+  # Prepare feature matrix & dims once
+  feature <- as.matrix(feature)
+  ncols   <- ncol(feature)
+  coln    <- colnames(feature)
+  if (is.null(coln)) coln <- paste0("V", seq_len(ncols))
+
+  # Split all groups once
+  groups <- strsplit(ids_vec, split, fixed = TRUE)
+
+  # Preallocate output matrix
+  out <- matrix(NA_character_, nrow = length(groups), ncol = ncols,
+                dimnames = list(NULL, coln))
+
+  # Work through each group (plain for-loop is fastest with preallocation)
+  for (g in seq_along(groups)) {
+    genes <- groups[[g]]
+
+    # Gather matched row indices and the corresponding genes (to keep mapping)
+    idx_all   <- integer(0)
+    genes_rep <- character(0)
+
+    # regex-like matching per gene (like grep)
+    for (p in genes) {
+      if (is.na(p) || p == "") next
+      hit <- which(grepl(p, table, ignore.case = ignore.case, perl = perl))
+      if (length(hit)) {
+        idx_all   <- c(idx_all, hit)
+        genes_rep <- c(genes_rep, rep(p, length(hit)))
+      }
+    }
+
+    # No matches → all NA
+    if (!length(idx_all)) {
+      next
+    }
+
+    fv <- feature[idx_all, , drop = FALSE]
+
+    # Single match → return that row
+    if (nrow(fv) == 1L) {
+      out[g, ] <- as.character(fv[1, , drop = TRUE])
+      next
+    }
+
+    # Multiple matches → summarize per column
+    for (j in seq_len(ncols)) {
+      v <- fv[, j]
+
+      # Preserve original NA behavior:
+      # feature.identical <- all(v[1] == v); if (is.na(feature.identical)) NA
+      feature_identical <- all(v[1] == v)
+      if (is.na(feature_identical)) {
+        out[g, j] <- NA_character_
+      } else if (feature_identical) {
+        out[g, j] <- v[1]
+      } else if (gene.details) {
+        # List genes for each distinct value (order of appearance)
+        # Use tapply on the *values* as groups
+        # Ensure stable order of unique(v)
+        uv <- unique(v)
+        parts <- character(length(uv))
+        for (k in seq_along(uv)) {
+          val <- uv[k]
+          which_k <- which(v == val)
+          parts[k] <- sprintf("%s (%s)", val, paste(genes_rep[which_k], collapse = ";"))
+        }
+        out[g, j] <- paste(parts, collapse = collapse)
+      } else {
+        # Values only
+        out[g, j] <- paste(unique(v), collapse = collapse)
+      }
+    }
+  }
+
+  out
+}
+
+
+
+
 ### Function for printing messages with time stamps
 
 # Arguments:
@@ -328,13 +416,38 @@ gene.properties <- function(x, table, feature, split = ", ", gene.details = T, c
 
 t.print <- function(..., sep = " ") {
     print(paste0("[", format(x = Sys.time(), format = "%Y-%m-%d %H:%M:%S"), "] ", paste(..., sep = sep)))
-  }
+}
 ```
+
+### Testing faster function
+```{r}
+system.time(
+	# extraction of gene properties by the function gene.properties
+	aa <- sapply(X = genes$ids[1:1000], FUN = gene.properties, table = subcell[, 1], feature = subcell[, 2], USE.NAMES = F)
+)
+
+system.time(
+	bb <- gene.properties_vec(
+  ids_vec  = genes$ids[1:1000],
+  table    = subcell[, 1],
+  feature  = subcell[, 2],   # can be vector / matrix / data.frame
+  split    = ", ",
+  gene.details = TRUE,
+  collapse = ", ",
+  ignore.case = TRUE,         # same as your grep(..., ignore.case=TRUE)
+  perl = TRUE                 # fast regex engine
+)
+)
+
+
+cbind(aa, bb)
+```
+
 
 ## Reading common files
 ```{r}
 # Read statistics from orthologues
-stats.ortho <- read.table("R_analysis/supplementing_orthologues_stats.tsv", sep = "\t", header = T)
+stats.ortho <- read.table("supplemented_orthologues/stats/supplementing_orthologues_stats.tsv", sep = "\t", header = T)
 
 
 ## Gene aliases
@@ -343,7 +456,7 @@ stats.ortho <- read.table("R_analysis/supplementing_orthologues_stats.tsv", sep 
 # https://v2.arabidopsis.org/download_files/Subscriber_Data_Releases/TAIR_Data_20240930/gene_aliases_20241001.txt.gz
 # (web page https://v2.arabidopsis.org/download/index-auto.jsp?dir=%2Fdownload_files%2FSubscriber_Data_Releases%2FTAIR_Data_20240930)
 
-aliases <- read.table(file = gzfile("R_analysis/functional_annotation_data/Araport11/gene_aliases_20241001.txt.gz"), header = T, sep = "\t", quote = "", comment.char = "", fill = T)
+aliases <- read.table(file = gzfile("functional_annotation/functional_annotation_data/Araport11/gene_aliases_20241001.txt.gz"), header = T, sep = "\t", quote = "", comment.char = "", fill = T)
 summary(aliases)
 dim(aliases)
 
@@ -358,6 +471,7 @@ aliases[aliases$locus_name == "AT1G01040", ]
 # checking converting
 aa <- iconv(aliases$full_name, from = "UTF-8", to = "ASCII", sub = "__AAAA__")
 aa[grep("__AAAA__", aa)]
+aliases$full_name[grep("__AAAA__", aa)]
 # remove special characters
 aliases$full_name <- iconv(aliases$full_name, from = "UTF-8", to = "ASCII", sub = "")
 
@@ -375,7 +489,7 @@ dim(aliases.agg)
 # File "Araport11-Subcellular_Predictions_version_2024_03_09.txt"
 # Downloaded on 2024-12-09 from https://www.arabidopsis.org/download/list?dir=Genes%2FAraport11_genome_release
 
-subcell <- read.table(file = "R_analysis/functional_annotation_data/Araport11/Araport11-Subcellular_Predictions_version_2024_03_09.txt", header = F, sep = "\t")
+subcell <- read.table(file = "functional_annotation/functional_annotation_data/Araport11/Araport11-Subcellular_Predictions_version_2024_03_09.txt", header = F, sep = "\t")
 summary(subcell)
 colnames(subcell) <- c("gene", "subcellular.prediction")
 
@@ -389,7 +503,7 @@ table(subcell$gene)[table(subcell$gene)>1] # yes
 # https://v2.arabidopsis.org/download_files/Subscriber_Data_Releases/TAIR_Data_20240930/Araport11_functional_descriptions_20241001.txt.gz 
 # (web page https://v2.arabidopsis.org/download/index-auto.jsp?dir=%2Fdownload_files%2FSubscriber_Data_Releases%2FTAIR_Data_20240930)
 
-fun.desc <- read.table(file = gzfile("R_analysis/functional_annotation_data/Araport11/Araport11_functional_descriptions_20241001.txt.gz"), header = T, sep = "\t", quote = "", comment.char = "")
+fun.desc <- read.table(file = gzfile("functional_annotation/functional_annotation_data/Araport11/Araport11_functional_descriptions_20241001.txt.gz"), header = T, sep = "\t", quote = "", comment.char = "")
 summary(fun.desc)
 # Missing values are sometimes "NULL" and sometimes missing.
 colSums(fun.desc == "")
@@ -400,13 +514,47 @@ fun.desc[fun.desc == ""] <- "NULL"
 # Are the gene IDs unique?
 table(fun.desc$name)[table(fun.desc$name)>1] # yes
 
+## GO annotations from arabidopsis.org
+# Downloaded on 2025-11-11 from
+# https://www.arabidopsis.org/download/file?path=Public_Data_Releases/TAIR_Data_20240930/ATH_GO_GOSLIM.txt.gz 
+# (web page https://www.arabidopsis.org/download/list?dir=Public_Data_Releases%2FTAIR_Data_20240930)
+go.ara <- read.table(file = unz(description = "functional_annotation/functional_annotation_data/Araport11/ATH_GO_GOSLIM.txt.gz", filename = "ATH_GO_GOSLIM.txt"), header = F, sep = "\t", quote = "", comment.char = "", skip = 4)
+summary(go.ara)
+dim(go.ara)
+colnames(go.ara) <- c("locus", "acc_tair", "object_name", "rel_type", "GO_term", "GO_ID", "keyword_id_tair", 
+											"aspect", "GOslim_term", "evid_code", "evid_descr", "evid_with", "ref", "annotator", "date")
+
+# Column headers: explanation
+# 1. locus name: standard AGI convention name. 
+# 2. TAIR accession: the unique identifier for an object in the TAIR database -  the object type is the prefix, followed by a unique accession number(e.g. gene:12345). 
+# 3. object name: the name of the object (gene, protein, locus) being annotated.
+# 4. relationship type: the relationship between the annotated object and the GO term.
+# 5. GO term: the actual string of letters corresponding to the GO ID.
+# 6. GO ID: the unique identifier for a GO term. 
+# 7. TAIR Keyword ID: the unique identifier for a keyword in the TAIR database.
+# 8. Aspect: F=molecular function, C=cellular component, P=biological 13process.
+# 9. GOslim term: high level GO term helps in functional categorization.
+# 10. Evidence code: three letter code for evidence types (see: http://geneontology.org/page/guide-go-evidence-codes).
+# 11. Evidence description: the analysis that was done to support the annotation.
+# 12. Evidence with: supporting evidence for IGI, IPI, IC, IEA and ISS annotations.
+# 13. Reference: Either a TAIR accession for a reference (reference table: reference_id) or reference from PubMed (e.g. PMID:1234). 
+# 14. Annotator: TAIR, TIGR or a TAIR community member.
+# 15. Date annotated: date the annotation was made.
+
+go.ara$locus
+# Are the gene IDs unique?
+table(go.ara$locus)[table(go.ara$locus)>1][1:60]
+# collapsing lines for the same genes, choosing just GO_ID
+go.ara.agg <- aggregate(x = go.ara[, c("locus", "GO_ID")], by = list(go.ara$locus), FUN = function(x) {paste(unique(x), collapse = ";")})[, -1]
+dim(go.ara.agg)
+
 
 ## Metabolic pathways
 # File "aracyc_pathways.20230103"
 # Downloaded on 2024-12-09 from
 # https://plantcyc-ftp.storage.googleapis.com/pmn/Pathways/Data_dumps/PMN15.5_January2023/pathways/aracyc_pathways.20230103
 # (web page https://plantcyc.org/)
-plantcyc <- read.table("R_analysis/functional_annotation_data/PlantCyc/aracyc_pathways.20230103", header = T, sep = "\t", quote = "", comment.char = "")
+plantcyc <- read.table("functional_annotation/functional_annotation_data/PlantCyc/aracyc_pathways.20230103", header = T, sep = "\t", quote = "", comment.char = "")
 colnames(plantcyc)
 head(plantcyc)
 # Are the gene IDs unique?
@@ -417,11 +565,11 @@ plantcyc.agg <- aggregate(x = plantcyc, by = list(plantcyc$Gene.id), FUN = funct
 
 
 ## Annotations from Uniprot
-# File "uniprotkb_proteome_up000006548_2024_12_12.tsv"
-# Downloaded on 2024-12-12 from https://www.uniprot.org/uniprot/?query=proteome%3Aup000006548.
+# File "uniprotkb_proteome_up000006548_2025_11_11.tsv.gz"
+# Downloaded on 2025-11-11 from https://www.uniprot.org/uniprot/?query=proteome%3Aup000006548.
 # I selected the desired columns for view and then downloaded that as a table.
 
-uniprot.1 <- read.table("R_analysis/functional_annotation_data/Uniprot/uniprotkb_proteome_up000006548_2024_12_12.tsv", header = T, sep = "\t", quote = "", comment.char = "")
+uniprot.1 <- read.table(gzfile("functional_annotation/functional_annotation_data/Uniprot/uniprotkb_proteome_up000006548_2025_11_11.tsv.gz"), header = T, sep = "\t", quote = "", comment.char = "")
 summary(uniprot.1)
 head(uniprot.1)
 
@@ -434,6 +582,7 @@ uniprot.1$Gene.Names..ordered.locus.[nchar(uniprot.1$Gene.Names..ordered.locus.)
 
 
 
+
 ## Big loop
 
 ```{r}
@@ -441,9 +590,10 @@ uniprot.1$Gene.Names..ordered.locus.[nchar(uniprot.1$Gene.Names..ordered.locus.)
 interpro.files <- list.files(path = "interproscan/", pattern = ".tsv.gz")
 species <- sub(pattern = ".tsv.gz", replacement = "", x = interpro.files, fixed = T)
 # species <- species[-1]
+# species <- species[c(1:4, 12:13, 17, 20:21, 6:11, 14:16, 18:19, 22)]
 
 # chosen species for testing of the loop
-one.species <- "Alyssum_gmelinii"
+one.species <- "Aethionema_saxatile"
 
 
 
@@ -451,13 +601,19 @@ one.species <- "Alyssum_gmelinii"
 ### Start of the big loop
 
 for(one.species in species) {
+	
+	  # Save console output to log file
+	dir.create(path = "functional_annotation/logs", recursive = T, showWarnings = F)
+	log.file <- file(paste0("functional_annotation/logs/", one.species, "_functional_annotation.log"), open = "wt")
+  sink(file = log.file, split = T)
+  sink(file = log.file, type = "message")
   
   t.print("Starting processing species", one.species)
   
   ## List of genes (AGI codes; there can be multiple genes per line separated by e.g. ";")
   
   # data (gene numbers)
-  genes.pre0 <- read.table(file = paste0("R_analysis/", one.species, "__v__Arabidopsis_thaliana_supplemented.tsv"), sep = "\t", header = T)
+  genes.pre0 <- read.table(file = paste0("supplemented_orthologues/", one.species, "__v__Arabidopsis_thaliana_supplemented.tsv"), sep = "\t", header = T)
   
   genes <- genes.pre0[, 1:2]
   genes$ids <- genes$Arabidopsis_thaliana
@@ -494,6 +650,18 @@ for(one.species in species) {
   # extraction of gene properties by the function gene.properties
   extr.fun.desc <- t(sapply(X = genes$ids, FUN = gene.properties, table = fun.desc$name, feature = fun.desc[, 2:5], USE.NAMES = F))
   
+  ## GO terms from arabidopsis.org
+  t.print("Extracting GO terms from arabidopsis.org for", one.species)
+  
+  # extraction of gene properties by the function gene.properties
+  extr.go.ara <- sapply(X = short.ids, FUN = gene.properties, table = go.ara.agg$locus, feature = go.ara.agg$GO_ID, gene.details = F, collapse = ";", USE.NAMES = F)
+  
+  # each string split by ;, make the items unique and then again collapse them to one string
+    used.col <- sapply(X = extr.go.ara, FUN = function(x) {
+      paste(unique(unlist(strsplit(x = x, split = ";"))), collapse = ";")
+    })
+    extr.go.ara <- used.col
+  
   
   ## Metabolic pathways
   t.print("Extracting metabolic pathways for", one.species)
@@ -508,12 +676,12 @@ for(one.species in species) {
   t.print("Extracting annotations from Uniprot for", one.species)
   
   # extraction of gene properties by the function gene.properties
-  system.time(
+  # system.time(
     uniprot.1.matched <- t(sapply(X = short.ids, FUN = gene.properties, 
                                   table = uniprot.1$Gene.Names..ordered.locus., 
                                   feature = uniprot.1, gene.details = F, collapse = ";", 
                                   USE.NAMES = F))
-  )
+  # )
   # It can take an hour, would be good to somehow optimize.
   
   
@@ -540,9 +708,9 @@ for(one.species in species) {
     used.col <- uniprot.1.matched.b[, i]
     # remove ; at line starts and ends
     used.col <- sub(pattern = "^;|;$", replacement = "", x = used.col)
-    # each string split by ;, make the items unique and then again collapse them to one string
+    # each string split by ; (can be surrounded by spaces), make the items unique and then again collapse them to one string
     used.col <- sapply(X = used.col, FUN = function(x) {
-      paste(unique(unlist(strsplit(x = x, split = ";"))), collapse = ";")
+      paste(unique(unlist(strsplit(x = x, split = " *; *"))), collapse = ";")
     })
     
     uniprot.1.matched.b[, i] <- used.col
@@ -580,14 +748,15 @@ for(one.species in species) {
   
   ## Completition of the table of annotations
   
-  annotations.1 <- cbind(genes.pre0, extr.aliases, extr.subcell, extr.fun.desc, pathway, uniprot.1.matched.c, thalemine.link, tair.link)
+  annotations.1 <- cbind(genes.pre0, extr.aliases, extr.subcell, extr.fun.desc, extr.go.ara, pathway, uniprot.1.matched.c, thalemine.link, tair.link)
   colnames(annotations.1)[colnames(annotations.1) == "extr.subcell"] <- "subcellular.prediction"
+  colnames(annotations.1)[colnames(annotations.1) == "extr.go.ara"] <- "GO"
   
   # renaming columns (to reflect source)
   colnames(annotations.1)[4:8] <- paste0("OrthoFinder_", colnames(annotations.1)[4:8])
-  colnames(annotations.1)[31:37] <- paste0("TAIR_", colnames(annotations.1)[31:37])
-  colnames(annotations.1)[38] <- paste0("PlantCyc_", colnames(annotations.1)[38])
-  colnames(annotations.1)[39:69] <- paste0("UniProt_", colnames(annotations.1)[39:69])
+  colnames(annotations.1)[31:38] <- paste0("TAIR_", colnames(annotations.1)[31:38])
+  colnames(annotations.1)[39] <- paste0("PlantCyc_", colnames(annotations.1)[39])
+  colnames(annotations.1)[40:71] <- paste0("UniProt_", colnames(annotations.1)[40:71])
   
   
   
@@ -660,9 +829,9 @@ for(one.species in species) {
   # aggregate if there are several rows for one protein
   extr.interpro.agg <- aggregate(x = extr.interpro.v, by = list(extr.interpro$protein), FUN = paste, collapse = "; ")
   # add as a new column
-  wide.interpro$InterProScan_interpro[match(x = extr.interpro.agg[, 1], table = wide.interpro$protein)] <- extr.interpro.agg[, 2]
+  wide.interpro$InterProScan_interpro <- extr.interpro.agg[, 2][match(x = wide.interpro$protein, table = extr.interpro.agg[, 1])]
   
-  
+
   ## add GO terms
   
   # extract rows with information
@@ -674,10 +843,11 @@ for(one.species in species) {
   extr.interpro.agg <- aggregate(x = extr.interpro.v, by = list(extr.interpro$protein), FUN = paste, collapse = "|")
   # each string split by |, make the items unique and then again collapse them to one string
   extr.interpro.agg$uniq <- sapply(X = extr.interpro.agg[, 2], FUN = function(x) {
-    paste(unique(unlist(strsplit(x = x, split = "|", fixed = T))), collapse = "; ")
+    paste(unique(unlist(strsplit(x = x, split = "|", fixed = T))), collapse = ";")
   })
   # add as a new column
-  wide.interpro$InterProScan_GO_term[match(x = extr.interpro.agg[, 1], table = wide.interpro$protein)] <- extr.interpro.agg$uniq
+  wide.interpro$InterProScan_GO_term <- extr.interpro.agg$uniq[match(x = wide.interpro$protein, table = extr.interpro.agg[, 1])]
+  
   
   
   ## adding Pathways
@@ -691,11 +861,11 @@ for(one.species in species) {
   # extr.interpro.agg[1:3, ]
   # each string split by |, make the items unique and then again collapse them to one string
   extr.interpro.agg$uniq <- sapply(X = extr.interpro.agg[, 2], FUN = function(x) {
-    paste(unique(unlist(strsplit(x = x, split = "|", fixed = T))), collapse = "; ")
+    paste(unique(unlist(strsplit(x = x, split = "|", fixed = T))), collapse = ";")
   })
   # extr.interpro.agg[1:3, ]
   # add as a new column
-  wide.interpro$InterProScan_pathways[match(x = extr.interpro.agg[, 1], table = wide.interpro$protein)] <- extr.interpro.agg$uniq
+  wide.interpro$InterProScan_pathways <- extr.interpro.agg$uniq[match(x = wide.interpro$protein, table = extr.interpro.agg[, 1])]
   
   
   ## Integrating with annotations from A. thaliana
@@ -704,22 +874,22 @@ for(one.species in species) {
   
   # View(annotations.2[1:30, c("UniProt_Gene.Ontology.IDs", "InterProScan_GO_term")])
   
-  ## Integrate A. thaliana (Uniprot) and InterProScan GO terms
+  ## Integrate A. thaliana (TAIR and Uniprot) and InterProScan GO terms (target species)
   
-  GO_term_IDs <- paste(annotations.2$"UniProt_Gene.Ontology.IDs", annotations.2$"InterProScan_GO_term", sep = "; ")
+  GO_term_IDs <- paste(annotations.2$TAIR_GO, annotations.2$"UniProt_Gene.Ontology.IDs", annotations.2$"InterProScan_GO_term", sep = ";")
   # GO_term_IDs[1:10]
   
   # remove NAs
   GO_term_IDs.2 <- gsub(pattern = "NA", replacement = "", x = GO_term_IDs)
   # GO_term_IDs.2[1:20]
   
-  # remove unnecessary "; "
-  GO_term_IDs.3 <- gsub(pattern = "^; |; $", replacement = "", x = GO_term_IDs.2)
+  # remove unnecessary ";"
+  GO_term_IDs.3 <- gsub(pattern = "^;*|;*$", replacement = "", x = GO_term_IDs.2)
   # GO_term_IDs.3[1:10]
   
   # each string split by "; ", make the items unique and then again collapse them to one string
   GO_term_IDs.uniq <- sapply(X = GO_term_IDs.3, FUN = function(x) {
-    paste(unique(unlist(strsplit(x = x, split = "; ", fixed = T))), collapse = "; ")
+    paste(unique(unlist(strsplit(x = x, split = ";", fixed = T))), collapse = ";")
   })
   
   annotations.2$GO_term_IDs <- GO_term_IDs.uniq
@@ -739,45 +909,52 @@ for(one.species in species) {
   
   t.print("Exporting tables for", one.species)
   
-  ## export full table without pathways (pathways are too big)
+  # make folders
+  dir.create(path = "functional_annotation/1_only_At_orthologues_and_GO", recursive = T, showWarnings = F)
+  dir.create(path = "functional_annotation/2_full_without_InterProScan_pathways_tsv_gz", recursive = T, showWarnings = F)
+  dir.create(path = "functional_annotation/3_InterProScan_pathways_tsv_gz", recursive = T, showWarnings = F)
+  dir.create(path = "functional_annotation/4_full_rds", recursive = T, showWarnings = F)
   
-  write.table(x = annotations.3[, colnames(annotations.3) != "InterProScan_pathways"], 
-              file = paste0("R_analysis/", one.species, "_At_orthologues_and_functional_annotations.tsv"),
-              sep = "\t", row.names = F, na = "", quote = F)
+  ## export full table without pathways (pathways are too big)
   
   # gzipped table
   write.table(x = annotations.3[, colnames(annotations.3) != "InterProScan_pathways"], 
-              file = gzfile(paste0("R_analysis/", one.species, "_At_orthologues_and_functional_annotations.tsv.gz")), 
+              file = gzfile(paste0("functional_annotation/2_full_without_InterProScan_pathways_tsv_gz/", one.species, "_At_orthologues_and_functional_annotations.tsv.gz")), 
               sep = "\t", row.names = F, na = "", quote = F)
   
   # export pathways
   write.table(x = annotations.3[, c(one.species, "InterProScan_pathways")], 
-              file = gzfile(paste0("R_analysis/", one.species, "_At_orthologues_and_InterProScan_pathways.tsv.gz")), 
+              file = gzfile(paste0("functional_annotation/3_InterProScan_pathways_tsv_gz/", one.species, "_InterProScan_pathways.tsv.gz")), 
               sep = "\t", row.names = F, na = "", quote = F)
   
   # write RDS
   saveRDS(object = annotations.3, 
-          file = paste0("R_analysis/", one.species, "_At_orthologues_and_functional_annotations_full.rds"))
+          file = paste0("functional_annotation/4_full_rds/", one.species, "_At_orthologues_and_functional_annotations_full.rds"))
   
   
   ## export main columns only
-  write.table(x = annotations.3[, c(1:4, 42)], 
-              file = paste0("R_analysis/", one.species, "_At_orthologues_and_functional_annotations_shortened.tsv"),
+  write.table(x = annotations.3[, c(1:4, 43)], 
+              file = paste0("functional_annotation/1_only_At_orthologues_and_GO/", one.species, "_At_orthologues_and_GO.tsv"),
               sep = "\t", row.names = F, na = "", quote = F)
   
   t.print(one.species, "finished.")
+  
+  # Stop saving output to log file
+  sink(type = "message")
+  sink()
+  close(log.file)
 }
 ### End of the big loop
 
 ```
 
-
+# End
 
 
 
 Checks of the numbers
 ```{r}
-annotations.3 <- readRDS(file = "R_analysis/Alyssum_gmelinii_At_orthologues_and_functional_annotations_full.rds")
+annotations.3 <- readRDS(file = "functional_annotation/Alyssum_gmelinii_At_orthologues_and_functional_annotations_full.rds")
 
 dim(annotations.3)
 sum(!is.na(annotations.3$Arabidopsis_thaliana))
