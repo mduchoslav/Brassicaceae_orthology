@@ -7,7 +7,57 @@ editor_options:
   chunk_output_type: console
 ---
 
+# Length of proteins
+
+```{sh}
+cd /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/
+mkdir -p protein_length_primary_transcripts
+
+for species_file in primary_transcripts/*.fasta
+do
+echo "Calculating length for: $species_file"
+species=$(sed -E 's-(^.*/)|(\.fasta)--g' <(echo $species_file))
+# echo $species
+
+## Calculate length of fasta sequences
+# Script from AI, tested
+awk '
+BEGIN { name=""; seq="" }
+/^>/ {
+    if (name != "") {
+        seq_clean = seq
+        sub(/[ *]+$/, "", seq_clean)   # remove trailing * only
+        print name "\t" length(seq_clean)
+    }
+    # extract first word of header without ">"
+    header = substr($0, 2)
+    split(header, a, /[ \t]/)
+    name = a[1]
+    seq = ""
+    next
+}
+{
+    line = $0
+    sub(/[ \t\r\n]+$/, "", line)
+    seq = seq line
+}
+END {
+    if (name != "") {
+        seq_clean = seq
+        sub(/[ *]+$/, "", seq_clean)
+        print name "\t" length(seq_clean)
+    }
+}
+' $species_file > protein_length_primary_transcripts/$species"_protein_length.tsv"
+
+done
+
+```
+
+
 # InterProScan - direct annotation of the genes of desired species (not A. thaliana orthologues)
+
+Inspiration from:
 
 Lian, Qichao, Bruno Huettel, Birgit Walkemeier, Baptiste Mayjonade, Céline Lopez-Roques, Lisa Gil, Fabrice Roux, Korbinian Schneeberger, and Raphael Mercier. “A Pan-Genome of 69 Arabidopsis Thaliana Accessions Reveals a Conserved Genome Structure throughout the Global Species Range.” Nature Genetics 56, no. 5 (May 2024): 982–91. https://doi.org/10.1038/s41588-024-01715-9.:
 
@@ -591,6 +641,7 @@ interpro.files <- list.files(path = "interproscan/", pattern = ".tsv.gz")
 species <- sub(pattern = ".tsv.gz", replacement = "", x = interpro.files, fixed = T)
 # species <- species[-1]
 # species <- species[c(1:4, 12:13, 17, 20:21, 6:11, 14:16, 18:19, 22)]
+# species <- species[-c(1:11)]
 
 # chosen species for testing of the loop
 one.species <- "Aethionema_saxatile"
