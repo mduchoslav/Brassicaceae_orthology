@@ -1014,6 +1014,117 @@ sum(!is.na(annotations.3$single_Arabidopsis_thaliana))
 ```
 
 
+# Statistics
+
+Counting GO terms per gene, plotting the histograms
+
+```{r}
+setwd("D:/!ecolgen/Brassicaceae_orthology/brassicaceae_3/")
+if(!exists("old.par")) old.par<-par(no.readonly = T)
+
+# read the short version of annotation file
+ann.files <- list.files(path = "functional_annotation/1_only_At_orthologues_and_GO/", pattern = ".tsv")
+species <- sub(pattern = "_At_orthologues_and_GO.tsv", replacement = "", x = ann.files, fixed = T)
+
+# chosen species for testing of the loop
+one.species <- "Arabidopsis_arenosa"
 
 
+### Start of the  loop
+
+# prepare data frames
+go.hist <- data.frame(bins = 0:99)
+go.stat <- data.frame()
+
+for(one.species in species) {
+	short.ann <- read.table(file = paste0("functional_annotation/1_only_At_orthologues_and_GO/", one.species, "_At_orthologues_and_GO.tsv"), header = T, sep = "\t", na.strings = "",
+													comment.char = "", quote = "")
+
+	# number of GO terms per gene
+	go.num <- sapply(X = short.ann$GO_term_IDs, FUN = function(x) {sum(unlist(gregexpr(pattern = "GO:", text = x)) > 0)}, USE.NAMES = F)
+	go.num[is.na(short.ann$GO_term_IDs)] <- 0
+	
+	# calculate data for histograms
+	spec.hist <- hist(go.num, breaks = seq(from = go.hist$bins[1]-0.5, to = go.hist$bins[nrow(go.hist)]+0.5), xlim = c(0, 30), main = one.species)
+	
+	# save to prepared dataframe
+	go.hist[, one.species] <- spec.hist$density
+
+	# save statistics to prepared dataframe
+	go.stat[1, "legend"] <- "Mean count of GO terms per gene"
+	go.stat[1, one.species] <- mean(go.num)
+	
+	go.stat[2, "legend"] <- "Median count of GO terms per gene"
+	go.stat[2, one.species] <- median(go.num)
+	
+	go.stat[3, "legend"] <- "Percentage of genes without GO term"
+	go.stat[3, one.species] <- 100*sum(is.na(short.ann$GO_term_IDs))/nrow(short.ann)
+}
+## End of loop
+
+## export table with statistics
+dir.create(path = "figs_and_stats", recursive = T, showWarnings = F)
+write.table(x = go.stat, 
+						file = "figs_and_stats/functional_annotation_stats.tsv",
+						sep = "\t", row.names = F, na = "", quote = F)
+
+## Plotting histograms
+pdf ("figs_and_stats/n_GO_terms_histogram.pdf", width=7, height=7, onefile = T)
+
+# all species
+g.data <- go.hist
+matplot(x = g.data$bins, y = g.data[, -1], type = "l", xlim = c(0, 30), lty = 1, col = rainbow(ncol(g.data)-1),
+				main = "Number of GO terms per gene", ylab = "Frequency", xlab = "Number of GO terms per gene")
+legend(x = "topright", legend = colnames(g.data[-1]), col = rainbow(ncol(g.data)-1), lty = 1)
+
+# Focus species
+colnames(go.hist)
+g.data <- go.hist[, c("bins", "Aethionema_saxatile", "Alyssum_gmelinii", "Arabidopsis_arenosa", "Arabidopsis_lyrata_NCBI", "Arabidopsis_lyrata_Rawat", "Cardamine_amara", "Cardamine_glauca", "Erysimum_linariifolium", "Noccaea_praecox", "Odontarrhena_muralis")]
+matplot(x = g.data$bins, y = g.data[, -1], type = "l", xlim = c(0, 30), lty = 1, col = rainbow(ncol(g.data)-1),
+				main = "Number of GO terms per gene", ylab = "Frequency", xlab = "Number of GO terms per gene")
+legend(x = "topright", legend = colnames(g.data[-1]), col = rainbow(ncol(g.data)-1), lty = 1)
+
+# Our annotations
+g.data <- go.hist[, c("bins", "Aethionema_saxatile", "Alyssum_gmelinii", "Cardamine_glauca", "Erysimum_linariifolium", "Noccaea_praecox", "Odontarrhena_muralis")]
+matplot(x = g.data$bins, y = g.data[, -1], type = "l", xlim = c(0, 30), lty = 1, col = rainbow(ncol(g.data)-1),
+				main = "Number of GO terms per gene", ylab = "Frequency", xlab = "Number of GO terms per gene")
+legend(x = "topright", legend = colnames(g.data[-1]), col = rainbow(ncol(g.data)-1), lty = 1)
+
+# Resource paper
+g.data <- go.hist[, c("bins", "Aethionema_saxatile", "Cardamine_glauca", "Erysimum_linariifolium", "Noccaea_praecox", "Odontarrhena_muralis")]
+matplot(x = g.data$bins, y = g.data[, -1], type = "l", xlim = c(0, 30), lty = 1, lwd = 2, col = rainbow(ncol(g.data)-1),
+				main = "Number of GO terms per gene", ylab = "Frequency", xlab = "Number of GO terms per gene")
+legend(x = "topright", legend = colnames(g.data[-1]), col = rainbow(ncol(g.data)-1), lwd = 2, lty = 1)
+
+dev.off()
+```
+
+### Results
+
+As in other statistics, *Cochlearia* seems to have over-predicted genes. Almost 30 % of it's genes don't have any GO term annotation, which is much higner than in other species. Most of them are probably not real protein-coding genes.
+
+## Comparison with older version
+
+```{r}
+## older version (2.0)
+short.ann <- read.table(file = "../brassicaceae_2/R_analysis/Arabidopsis_arenosa_At_orthologues_and_functional_annotations_shortened.tsv", header = T, sep = "\t", na.strings = "",
+												comment.char = "", quote = "")
+
+# number of GO terms
+go.num <- sapply(X = short.ann$GO_term_IDs, FUN = function(x) {sum(unlist(gregexpr(pattern = "GO:", text = x)) > 0)}, USE.NAMES = F)
+go.num[is.na(short.ann$GO_term_IDs)] <- 0
+
+hist(go.num, breaks = (0:100)-0.5, xlim = c(0, 30))
+# mean
+mean(go.num)
+# median
+median(go.num)
+# Percent of genes without GO term
+100*sum(is.na(short.ann$GO_term_IDs))/nrow(short.ann)
+
+
+
+```
+
+In A. arenosa, all of the numbers got better. The number of genes without GO terms decreased from 18 % to 7 %.
 
