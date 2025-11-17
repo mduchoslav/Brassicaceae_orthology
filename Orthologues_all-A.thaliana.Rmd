@@ -768,8 +768,8 @@ for(one.species in species) {
 
 
 ### Exporting table with statistics
-dir.create(path = "supplemented_orthologues/stats", recursive = T, showWarnings = F)
-write.table(x = stats.ortho, file = "supplemented_orthologues/stats/supplementing_orthologues_stats.tsv", sep = "\t", row.names = F)
+dir.create(path = "figs_and_stats", recursive = T, showWarnings = F)
+write.table(x = stats.ortho, file = "figs_and_stats/supplementing_orthologues_stats.tsv", sep = "\t", row.names = F)
 
 ```
 

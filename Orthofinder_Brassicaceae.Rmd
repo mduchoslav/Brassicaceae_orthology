@@ -668,7 +668,7 @@ old.par<-par(no.readonly = T)
 spec.overlap <- read.table(file = "orthofinder_results/Results_brassicaceae_3/Comparative_Genomics_Statistics/Orthogroups_SpeciesOverlaps.tsv")
 
 ## heatmap with values
-pdf ("figs/Orthogroups_SpeciesOverlaps_heatmap.pdf", width=14, height=7, onefile = T)
+pdf ("figs_and_stats/Orthogroups_SpeciesOverlaps_heatmap.pdf", width=14, height=7, onefile = T)
 par(mar = c(2, 12, 12, 2) + 0.1)
 # input data
 gdata <- spec.overlap
@@ -723,7 +723,7 @@ folder <- "orthofinder_results/Results_brassicaceae_3/Comparative_Genomics_Stati
 file.pattern <- "OrthologuesStats"
 files <- list.files(folder, pattern = file.pattern)
 
-pdf ("figs/Comparative_Genomics_Statistics_heatmaps.pdf", width=14, height=7, onefile = T)
+pdf ("figs_and_stats/Comparative_Genomics_Statistics_heatmaps.pdf", width=14, height=7, onefile = T)
 par(mar = c(2, 12, 12, 2) + 0.1)
 for(i in 5:1) {
   gdata <- read.table(file = paste0(folder, files[i]))
@@ -753,7 +753,7 @@ per.spec <- read.table(file = "orthofinder_results/Results_brassicaceae_3/Compar
 
 
 ## heatmap with values
-pdf ("figs/Statistics_PerSpecies_heatmap.pdf", width=16, height=7, onefile = T)
+pdf ("figs_and_stats/Statistics_PerSpecies_heatmap.pdf", width=16, height=7, onefile = T)
 par(mar = c(2, 22, 12, 2) + 0.1)
 # input data
 gdata <- per.spec
