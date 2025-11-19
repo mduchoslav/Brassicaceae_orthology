@@ -136,8 +136,33 @@ matplot(x = g.data$bins, y = g.data[, -1], type = "l", xlim = c(0, 2000), lty = 
 				main = "Protein length spectrum", ylab = "Frequency", xlab = "Protein length", lwd = 2)
 legend(x = "topright", legend = colnames(g.data[-1]), col = rainbow(ncol(g.data)-1), lwd = 2, lty = 1)
 
+# Resource paper + well-annotated species
+g.data <- length.hist[, c("bins", "Aethionema_saxatile", "Cardamine_glauca", "Erysimum_linariifolium", "Noccaea_praecox", "Odontarrhena_muralis", "Arabidopsis_lyrata_NCBI", "Arabidopsis_thaliana", "Brassica_rapa")]
+matplot(x = g.data$bins, y = g.data[, -1], type = "l", xlim = c(0, 2000), lty = 1, col = rainbow(ncol(g.data)-1), pch = 19,
+				main = "Protein length spectrum", ylab = "Frequency", xlab = "Protein length", lwd = 2)
+legend(x = "topright", legend = colnames(g.data[-1]), col = rainbow(ncol(g.data)-1), lwd = 2, lty = 1)
+
+dev.off()
+
+## Plot for publication
+# use palette from ColorBrewer
+require(RColorBrewer)
+display.brewer.all(n = 5, type = "qual", colorblindFriendly = T)
+# Resource paper
+g.data <- length.hist[, c("bins", "Aethionema_saxatile", "Cardamine_glauca", "Erysimum_linariifolium", "Noccaea_praecox", "Odontarrhena_muralis")]
+# Change to %
+g.data[, -1] <- g.data[, -1] * 100
+
+pdf ("figs_and_stats/prot_length_histogram_for_publication.pdf", width=7, height=7, onefile = T)
+matplot(x = g.data$bins, y = g.data[, -1], type = "l", xlim = c(0, 2000), lty = 1, col = brewer.pal(n = ncol(g.data)-1, name = "Dark2"), pch = 19,
+				main = "", ylab = "Frequency (%)", xlab = "Protein length", lwd = 2)
+g.legend <- gsub(pattern = "_", replacement = " ", x = colnames(g.data[-1]))
+legend(x = "topright", legend = g.legend, col = brewer.pal(n = ncol(g.data)-1, name = "Dark2"), lwd = 2, lty = 1, text.font = 3)
 dev.off()
 ```
+
+To do:
+- Compare protein length spectra for reliable genes
 
 
 
@@ -149,44 +174,7 @@ Lian, Qichao, Bruno Huettel, Birgit Walkemeier, Baptiste Mayjonade, Céline Lope
 
 The resulting gene models were further annotated functionally using InterProScan v5.59-91.0 (ref. 109) (parameters: -f TSV -t p -iprlookup -goterms -pa).
 
-## Interproscan download
 
-https://interproscan-docs.readthedocs.io/en/latest/HowToDownload.html
-
-```{sh}
-cd /storage/brno12-cerit/home/duchmil/SW/InterProScan/
-
-wget https://ftp.ebi.ac.uk/pub/software/unix/iprscan/5/5.76-107.0/interproscan-5.76-107.0-64-bit.tar.gz
-wget https://ftp.ebi.ac.uk/pub/software/unix/iprscan/5/5.76-107.0/interproscan-5.76-107.0-64-bit.tar.gz.md5
-
-# Recommended checksum to confirm the download was successful:
-md5sum -c interproscan-5.76-107.0-64-bit.tar.gz.md5
-# Must return *interproscan-5.76-107.0-64-bit.tar.gz: OK*
-# If not - try downloading the file again as it may be a corrupted copy.
-
-tar -pxvzf interproscan-5.76-107.0-64-bit.tar.gz
-# where:
-#     p = preserve the file permissions
-#     x = extract files from an archive
-#     v = verbosely list the files processed
-#     z = filter the archive through gzip
-#     f = use archive file
-
-cd interproscan-5.76-107.0/
-
-#Index hmm models
-python3 setup.py -f interproscan.properties
-
-# check
-module load openjdk
-module list
-# openjdk/17.0.0_35-intel-19.0.4-udmzouu
-./interproscan.sh
-
-# tests
-./interproscan.sh -i test_all_appl.fasta -f tsv -dp
-./interproscan.sh -i test_all_appl.fasta -f tsv
-```
 
 ## InterProScan - preparation of input files
 
@@ -1147,6 +1135,9 @@ for(one.species in species) {
 	
 	go.stat[3, "legend"] <- "Percentage of genes without GO term"
 	go.stat[3, one.species] <- 100*sum(is.na(short.ann$GO_term_IDs))/nrow(short.ann)
+	
+	go.stat[4, "legend"] <- "Percentage of genes with some GO term"
+	go.stat[4, one.species] <- 100 -100*sum(is.na(short.ann$GO_term_IDs))/nrow(short.ann)
 }
 ## End of loop
 
@@ -1154,6 +1145,13 @@ for(one.species in species) {
 dir.create(path = "figs_and_stats", recursive = T, showWarnings = F)
 write.table(x = go.stat, 
 						file = "figs_and_stats/functional_annotation_stats.tsv",
+						sep = "\t", row.names = F, na = "", quote = F)
+
+## export table with statistics for publication
+go.stat.pub <- go.stat[, c("legend", "Aethionema_saxatile", "Cardamine_glauca", "Erysimum_linariifolium", "Noccaea_praecox", "Odontarrhena_muralis")]
+# go.stat.pub[ ,-1] <- round(go.stat.pub[ ,-1], 1)
+write.table(x = go.stat.pub, 
+						file = "figs_and_stats/functional_annotation_stats_for_pub.tsv",
 						sep = "\t", row.names = F, na = "", quote = F)
 
 ## Plotting histograms

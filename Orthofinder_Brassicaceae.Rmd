@@ -553,6 +553,7 @@ cp -v primary_transcripts/*.fasta ../primary_transcripts/
 ### Removing Rorippa
 ```{sh}
 cd /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/primary_transcripts/
+rm -v Rorippa_islandica.fasta
 ```
 
 ## Cleaning fasta files

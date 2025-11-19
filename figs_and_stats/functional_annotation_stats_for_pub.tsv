@@ -1,0 +1,5 @@
+legend	Aethionema_saxatile	Cardamine_glauca	Erysimum_linariifolium	Noccaea_praecox	Odontarrhena_muralis
+Mean count of GO terms per gene	7.58654543902335	7.70055879494655	7.3009093971034	7.16045060658579	6.95472244236932
+Median count of GO terms per gene	7	7	6	6	6
+Percentage of genes without GO term	6.12541085072779	1.77761580822805	4.97137083192994	6.5684575389948	9.12098135832673
+Percentage of genes with some GO term	93.8745891492722	98.222384191772	95.0286291680701	93.4315424610052	90.8790186416733
