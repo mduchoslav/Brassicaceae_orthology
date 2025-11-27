@@ -1041,53 +1041,28 @@ write.table(x = stats.ortho, file = "figs_and_stats/supplementing_orthologues_st
 
 ```
 
-
-
+### Improving table with stats
 ```{r}
-species <- species[-c(1,2)]
-species <- species[1]
+setwd("D:/!ecolgen/Brassicaceae_orthology/brassicaceae_3/")
+if(!exists("old.par")) old.par<-par(no.readonly = T)
 
+stats.ortho <- read.table(file = "figs_and_stats/supplementing_orthologues_stats.tsv", sep = "\t", head = T)
 
+# stats.ortho.2 <- t(stats.ortho)
 
-# Example loop
-for (i in 1:5) {
-  # Create a log file for each iteration
-  log_filename <- paste0("log_iteration_", i, ".txt")
-  
-  # Redirect output to the log file
-  sink(log_filename)
-  # Redirect warnings to the same log file
-  sink(log_filename, type = "message")
-  
-  # Print some output (this will go to the log file)
-  print(paste("This is iteration", i))
-  
-  # Generate a warning for demonstration (this will also go to the log file)
-  if (i %% 2 == 0) {
-    warning("This is a warning!")
-  }
-  
-  # More output can be printed here
-  print(paste("Random number:", runif(1)))
-  
-  # Stop redirecting output (this will stop saving the output to the log file)
-  sink()
-  sink(type = "message")
+# put total on top
+stats.ortho_2 <- stats.ortho[c(11, 1:10, 12, 13), ]
+stats.ortho_3 <- stats.ortho_2
+# calculate percent
+for(i in 2:ncol(stats.ortho_2)) {
+	stats.ortho_3[, i] <- paste0(formatC(x = stats.ortho_2[, i], big.mark = " "), " (", round(stats.ortho_2[, i]/stats.ortho_2[1, i], 2)*100, "%)")
 }
 
+write.table(x = stats.ortho_3, file = "figs_and_stats/supplementing_orthologues_stats_2.tsv", sep = "\t", row.names = F)
 
-
-## capture all the output to a file.
-zz <- file("all.Rout", open = "wt")
-sink(zz)
-sink(zz, type = "message")
-try(log("a"))
-## revert output back to the console -- only then access the file!
-sink(type = "message")
-sink()
-file.show("all.Rout")
-close(zz)
 ```
+
+
 
 
 

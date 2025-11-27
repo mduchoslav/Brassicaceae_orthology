@@ -978,8 +978,9 @@ for(one.species in species) {
 	go.stat[3, "legend"] <- "Percentage of genes without GO term"
 	go.stat[3, one.species] <- 100*sum(is.na(short.ann$GO_term_IDs))/nrow(short.ann)
 	
-	go.stat[4, "legend"] <- "Percentage of genes with some GO term"
-	go.stat[4, one.species] <- 100 -100*sum(is.na(short.ann$GO_term_IDs))/nrow(short.ann)
+	go.stat[4, "legend"] <- "Genes with some GO term"
+	# go.stat[4, one.species] <- 100 -100*sum(is.na(short.ann$GO_term_IDs))/nrow(short.ann)
+	go.stat[4, one.species] <- paste0(formatC(x = sum(!is.na(short.ann$GO_term_IDs)), big.mark = " "), " (", round(sum(!is.na(short.ann$GO_term_IDs))/nrow(short.ann), 2)*100, "%)")
 }
 ## End of loop
 
