@@ -1,7 +1,7 @@
 ---
 title: "Enriching list of orthologues"
 author: "Miloš Duchoslav"
-date: "2025-02"
+date: "2025-11"
 output:
   github_document:
     toc: true
@@ -17,7 +17,7 @@ knitr::opts_chunk$set(eval = FALSE)
 
 # Introduction
 
-This RMarkdown file (or its markdown version for GitHub) documents supplementing the list of orthologues from OrthoFinder (run brassicaceae_2) with results from BLAST and with orthogroups from OrthoFinder to get *Arabidopsis thaliana* homologues for as many genes of the target species as possible. The homologues will be used in other scripts to transfer functional annotation from *Arabidopsis thaliana* genes.
+This RMarkdown file (or its markdown version for GitHub) documents supplementing the list of orthologues from OrthoFinder with results from BLAST and with orthogroups from OrthoFinder to get *Arabidopsis thaliana* homologues for as many genes of the target species as possible. The homologues will be used in other scripts to transfer functional annotation from *Arabidopsis thaliana* genes.
 
 This file includes:
 
@@ -69,9 +69,9 @@ Strategy for column with single orthologues (column `single_Arabidopsis_thaliana
 
 # Length of proteins
 
-I will add lenght of protein sequence (of the longest transcript) to the list of genes. It is good for comparison with lenght of obtained homologues. Also, it will help me to get all genes in the list.
+I will add length of protein sequence (of the longest transcript) to the list of genes. It is good for comparison with length of obtained homologues. Also, it will help me to get all genes in the list.
 
-## Calculation
+## Calculation of protein length from fasta
 ```{sh}
 cd /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/
 mkdir -p protein_length_primary_transcripts
@@ -117,116 +117,7 @@ done
 
 ```
 
-## Histograms
 
-```{r}
-setwd("D:/!ecolgen/Brassicaceae_orthology/brassicaceae_3/")
-if(!exists("old.par")) old.par<-par(no.readonly = T)
-
-# read the short version of annotation file
-length.files <- list.files(path = "protein_length_primary_transcripts/", pattern = ".tsv")
-species <- sub(pattern = "_protein_length.tsv", replacement = "", x = length.files, fixed = T)
-
-# chosen species for testing of the loop
-one.species <- "Arabidopsis_arenosa"
-
-
-### Start of the  loop
-
-# set boundaries and coarsness of frequency calculation
-l.min <- 0
-l.max <- 10000
-l.by <- 25
-# prepare data frames
-length.hist <- data.frame(bins = seq(from = l.min + (l.by / 2), to = l.max - (l.by / 2), by = l.by))
-# length.hist <- data.frame(bins = seq(from = 25, to = 9975, by = 50))
-length.stat <- data.frame()
-
-for(one.species in species) {
-	prot.length <- read.table(file = paste0("protein_length_primary_transcripts/", one.species, "_protein_length.tsv"), header = F, sep = "\t", na.strings = "",
-													comment.char = "", quote = "")
-	colnames(prot.length) <- c("gene", "prot_length")
-
-	# calculate data for histograms
-	hist(prot.length$prot_length, breaks = 50)
-	summary(prot.length$prot_length)
-	spec.hist <- hist(prot.length$prot_length, breaks = seq(from = l.min, to = l.max, by = l.by), xlim = c(0, 3000), main = one.species)
-	
-	# save to prepared dataframe
-	length.hist[, one.species] <- spec.hist$density
-
-	# save statistics to prepared dataframe
-	length.stat[1, "legend"] <- "Mean protein length"
-	length.stat[1, one.species] <- mean(prot.length$prot_length)
-	
-	length.stat[2, "legend"] <- "Median protein length"
-	length.stat[2, one.species] <- median(prot.length$prot_length)
-}
-## End of loop
-
-## export table with statistics
-dir.create(path = "figs_and_stats", recursive = T, showWarnings = F)
-write.table(x = length.stat, 
-						file = "figs_and_stats/protein_length_stats.tsv",
-						sep = "\t", row.names = F, na = "", quote = F)
-
-## Plotting histograms
-pdf ("figs_and_stats/prot_length_histogram.pdf", width=7, height=7, onefile = T)
-
-# all species
-g.data <- length.hist
-matplot(x = g.data$bins, y = g.data[, -1], type = "l", xlim = c(0, 2000), lty = 1, col = rainbow(ncol(g.data)-1), pch = 19,
-				main = "Protein length spectrum", ylab = "Frequency", xlab = "Protein length")
-legend(x = "topright", legend = colnames(g.data[-1]), col = rainbow(ncol(g.data)-1), lty = 1)
-
-# Focus species
-colnames(length.hist)
-g.data <- length.hist[, c("bins", "Aethionema_saxatile", "Alyssum_gmelinii", "Arabidopsis_arenosa", "Arabidopsis_lyrata_NCBI", "Arabidopsis_lyrata_Rawat", "Arabidopsis_thaliana", "Cardamine_amara", "Cardamine_glauca", "Erysimum_linariifolium", "Noccaea_praecox", "Odontarrhena_muralis")]
-matplot(x = g.data$bins, y = g.data[, -1], type = "l", xlim = c(0, 2000), lty = 1, col = rainbow(ncol(g.data)-1), pch = 19,
-				main = "Protein length spectrum", ylab = "Frequency", xlab = "Protein length")
-legend(x = "topright", legend = colnames(g.data[-1]), col = rainbow(ncol(g.data)-1), lty = 1)
-
-# Our annotations
-g.data <- length.hist[, c("bins", "Aethionema_saxatile", "Alyssum_gmelinii", "Cardamine_glauca", "Erysimum_linariifolium", "Noccaea_praecox", "Odontarrhena_muralis")]
-matplot(x = g.data$bins, y = g.data[, -1], type = "l", xlim = c(0, 2000), lty = 1, col = rainbow(ncol(g.data)-1), pch = 19,
-				main = "Protein length spectrum", ylab = "Frequency", xlab = "Protein length")
-legend(x = "topright", legend = colnames(g.data[-1]), col = rainbow(ncol(g.data)-1), lty = 1)
-
-# Resource paper
-g.data <- length.hist[, c("bins", "Aethionema_saxatile", "Cardamine_glauca", "Erysimum_linariifolium", "Noccaea_praecox", "Odontarrhena_muralis")]
-matplot(x = g.data$bins, y = g.data[, -1], type = "l", xlim = c(0, 2000), lty = 1, col = rainbow(ncol(g.data)-1), pch = 19,
-				main = "Protein length spectrum", ylab = "Frequency", xlab = "Protein length", lwd = 2)
-legend(x = "topright", legend = colnames(g.data[-1]), col = rainbow(ncol(g.data)-1), lwd = 2, lty = 1)
-
-# Resource paper + well-annotated species
-g.data <- length.hist[, c("bins", "Aethionema_saxatile", "Cardamine_glauca", "Erysimum_linariifolium", "Noccaea_praecox", "Odontarrhena_muralis", "Arabidopsis_lyrata_NCBI", "Arabidopsis_thaliana", "Brassica_rapa")]
-matplot(x = g.data$bins, y = g.data[, -1], type = "l", xlim = c(0, 2000), lty = 1, col = rainbow(ncol(g.data)-1), pch = 19,
-				main = "Protein length spectrum", ylab = "Frequency", xlab = "Protein length", lwd = 2)
-legend(x = "topright", legend = colnames(g.data[-1]), col = rainbow(ncol(g.data)-1), lwd = 2, lty = 1)
-
-dev.off()
-
-## Plot for publication
-# use palette from ColorBrewer
-require(RColorBrewer)
-display.brewer.all(n = 5, type = "qual", colorblindFriendly = T)
-# Resource paper
-g.data <- length.hist[, c("bins", "Aethionema_saxatile", "Cardamine_glauca", "Erysimum_linariifolium", "Noccaea_praecox", "Odontarrhena_muralis")]
-# Change to %
-g.data[, -1] <- g.data[, -1] * 100
-
-pdf ("figs_and_stats/prot_length_histogram_for_publication.pdf", width=7, height=7, onefile = T)
-matplot(x = g.data$bins, y = g.data[, -1], type = "l", xlim = c(0, 2000), lty = 1, col = brewer.pal(n = ncol(g.data)-1, name = "Dark2"), pch = 19,
-				main = "", ylab = "Frequency (%)", xlab = "Protein length", lwd = 2)
-g.legend <- gsub(pattern = "_", replacement = " ", x = colnames(g.data[-1]))
-legend(x = "topright", legend = g.legend, col = brewer.pal(n = ncol(g.data)-1, name = "Dark2"), lwd = 2, lty = 1, text.font = 3)
-dev.off()
-```
-
-To do:
-- Compare protein length spectra for reliable genes
- 
- 
 # Running BLAST and reciprocal BLAST
 
 Approach similar to:  
@@ -234,8 +125,9 @@ Approach similar to:
 
 The code for the paper is at Sian Bray's [GitHub](https://github.com/Sian-Bray/Cochlearia_2024).
 
+## BLAST
 
-## Script for running Blast on Metacentrum
+### Script for running Blast on Metacentrum
 
 ```{bash}
 ### Metacentrum script
@@ -310,6 +202,8 @@ clean_scratch
 # Resources used: Up to 46 min (mostly 11-20 min), 64-99% CPU, up to 1 GB memory.
 ```
 
+### Submitting jobs for several species
+
 ```{bash}
 cd /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/metacentrum_scripts
 
@@ -320,6 +214,8 @@ qsub  -v "species=$species" blast_species_vs_Arabidopsis_thaliana.bash
 done
 
 ```
+
+### Compressing results
 
 ```{bash}
 cd /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/blast_results
@@ -438,6 +334,8 @@ clean_scratch
 # Resources: up to 1 h, 68-99 % CPU, up to 660 MB memory
 ```
 
+### Submitting jobs for several species
+
 ```{bash}
 cd /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/metacentrum_scripts
 
@@ -478,85 +376,13 @@ I guess it might mean that there are some proteins that have identical sequence 
 
 # Enriching list of orthologues - compilation of results
 
-R scripts for compilation of results from the different sources.
+R script for compilation of results from the different sources.
 
-### Load functions etc.
+## Load functions etc.
 
 ```{r}
 setwd("D:/!ecolgen/Brassicaceae_orthology/brassicaceae_3")
 old.par<-par(no.readonly = T)
-
-
-### Function to split multiple values in one row to several rows
-# Just one column will be splitted, the other will be repeated.
-# x - data.frame to be splitted
-# col.split - number of column where the values should be splitted
-# split - separator of the values to be splitted
-
-# x = ortho1
-# x = o.groups_a
-# col.split = 2
-df.split <- function(x, col.split, split = ", ") {
-  num.rows <- nrow(x)
-  # prepare empty data frame
-  x.split <- data.frame(x[1, ])
-  x.split[1:num.rows, ] <- NA
-  # loop to fill the data frame
-
-  for(i in 1:num.rows) {
-    if(i == 1) j <- 1
-    genes1 <- unlist(strsplit(x = x[i, col.split], split = split))
-    lng <- length(genes1)
-    if(lng == 0) {
-      x.split[j, ] <- x[i, ]
-      j <- j + 1
-    } else {
-      # fill values in the splitted column
-      x.split[j:(j+lng-1), col.split] <- genes1
-      # repeat values in the other columns
-      x.split[j:(j+lng-1), -col.split] <- x[i, -col.split]
-      j <- j + lng
-    }
-    if(i%%1000 == 0) print(paste(i, "out of", num.rows, "lines done"))
-  }
-  return(x.split)
-}
-
-# # checking speed
-# x = o.groups_a_2
-# col.split = 4
-# split = ", "
-# i=1
-# i=19
-# i=2000
-# #df.split <- function(x, col.split, split = ", ") {
-#   system.time(num.rows <- nrow(x))
-#   # prepare empty data frame
-#   system.time(x.split <- data.frame(x[1, ]))
-#   system.time(x.split[1:num.rows, ] <- NA)
-#   # loop to fill the data frame
-# 
-#   for(i in 1:num.rows) {
-#     system.time(replicate(1000,if(i == 1) j <- 1))
-#     system.time(replicate(1000,genes1 <- unlist(strsplit(x = x[i, col.split], split = split))))
-#     system.time(replicate(1000,lng <- length(genes1)))
-#     if(lng == 0) {
-#       system.time(replicate(1000,{x.split[j, ] <- x[i, ]}))
-#       j <- j + 1
-#     } else {
-#       # fill values in the splitted column
-#       system.time(replicate(1000, {x.split[j:(j+lng-1), col.split] <- genes1}))
-#       # repeat values in the other columns
-#       system.time(replicate(1000,{x.split[j:(j+lng-1), -col.split] <- x[i, -col.split]}))
-#       system.time(replicate(1000,{x.split[j:(j+lng-1), 2] <- x[i, 2]}))
-#       system.time(replicate(1000,{j <- j + lng}))
-#     }
-#     if(i%%1000 == 0) print(paste(i, "out of", num.rows, "lines done"))
-#   }
-#   return(x.split)
-# #}
-
-
 
 ### Function to split multiple values in one row to several rows 
 ### - fast version based on data.table package
@@ -578,32 +404,6 @@ df_split_dt <- function(x, col.split, split = ", ") {
   dt[, strsplit(get(colname), split), by = setdiff(names(dt), colname)][, setnames(.SD, "V1", colname) ][, names(dt), with = F]
 }
 
-# 
-# x = ortho1b[1:30, ]
-# x = ortho1[1:30, ]
-# col.split = which(colnames(ortho1b) == one.species)
-# col.split = which(colnames(ortho1) == one.species)
-# col.split = 1
-# split = ", "
-
-
-
-
-
-# testing
-ortho.split.a <- df.split(x = ortho1b[1:100, ], col.split = which(colnames(ortho1b) == one.species), split = ", ")
-ortho.split.b <- df_split_dt(x = ortho1b[1:100, ], col.split = which(colnames(ortho1b) == one.species), split = ", ")
-ortho.split.a$Arabidopsis_arenosa == ortho.split.b$Arabidopsis_arenosa
-ortho.split.a$Arabidopsis_thaliana == ortho.split.b$Arabidopsis_thaliana
-
-ortho.split.a2 <- df.split(x = ortho1b, col.split = which(colnames(ortho1b) == one.species), split = ", ")
-ortho.split.b2 <- df_split_dt(x = ortho1b, col.split = which(colnames(ortho1b) == one.species), split = ", ")
-ortho.split.b2 <- df_split_dt(x = ortho1b, col.split = one.species, split = ", ")
-all(ortho.split.a2$Arabidopsis_arenosa == ortho.split.b2$Arabidopsis_arenosa)
-all(ortho.split.a2$Arabidopsis_thaliana == ortho.split.b2$Arabidopsis_thaliana)
-
-cc <- df_split_dt(x = o.groups.a.t_a[1:5, ], col.split = which(colnames(o.groups.a.t_a) == one.species), split = ", ")
-
 
 ### Function for printing messages with time stamps
 
@@ -616,7 +416,7 @@ t.print <- function(..., sep = " ") {
   }
 ```
 
-### Reading common files
+## Reading common files
 ```{r}
 o.groups_a <- read.table(file = "orthofinder_results/Results_brassicaceae_3/Phylogenetic_Hierarchical_Orthogroups/N0.tsv", sep = "\t", header = T)
 
@@ -627,7 +427,7 @@ o.groups_b <- read.table(file = "orthofinder_results/Results_brassicaceae_3/Orth
 
 
 
-### Big loop
+## Big loop
 
 This loop cycles through species where the orthologues from Orthofinder should be supplemented.
 
@@ -796,81 +596,6 @@ for(one.species in species) {
   ## choose the best hits for each query (target species) gene
   
   t.print("choose the best hits for each query (target species) gene")
-  
-  # # It chooses now based on best bitscore, but can be modified.
-  # # The query genes must be ordered (the same ones in successive rows), but it is faster like this than looking for the right rows through the whole data.frame.
-  # 
-  # # remove the object if it exists (otherwise it will just append new lines)
-  # if(exists("blast.single")) remove("blast.single")
-  # # set the start row
-  # i=1
-  # # i=3093075
-  # # loop
-  # while(i <= nrow(blast1)) {
-  #   query <- blast1$qaccver[i]
-  #   q.start <- i
-  #   # Increase i until there is different query gene.
-  #   while(blast1$qaccver[i] == query & i <= nrow(blast1)) {
-  #     i <- i + 1
-  #     # Report on speed of processing
-  #     if(i %% 10000 == 0) print(paste("Processed", i, "rows out of", nrow(blast1)))
-  #   }
-  #   q.end <- i - 1
-  #   # extract rows for particular query gene
-  #   one.query <- blast1[q.start:q.end, ]
-  #   # extract row with the best hit
-  #   one.hit <- one.query[one.query$bitscore == max(one.query$bitscore), ]
-  #   # append to the existing object or make new object
-  #   if(exists("blast.single")) {
-  #     blast.single <- rbind(blast.single, one.hit)
-  #   } else {
-  #     blast.single <- one.hit
-  #   }
-  # }
-  # 
-  # blast.single.1 <- blast.single
-  # 
-  # 
-  # 
-  # 
-  # ## loop to merge rows for query genes with multiple best hits
-  # 
-  # t.print("loop to merge rows for query genes with multiple best hits")
-  # 
-  # # Hit names will be collapsed (separated by ", "), the other values will be used from the first hit.
-  # 
-  # # remove the object if it exists (otherwise it will just append new lines)
-  # if(exists("blast.single.2")) remove("blast.single.2")
-  # # set the start row
-  # i=1
-  # # i=3093075
-  # # which(blast.single.1$qaccver == "jg28766")
-  # # i=359
-  # # loop
-  # while(i <= nrow(blast.single.1)) {
-  #   query <- blast.single.1$qaccver[i]
-  #   q.start <- i
-  #   # Increase i until there is different query gene.
-  #   while(blast.single.1$qaccver[i] == query & i <= nrow(blast.single.1)) {
-  #     i <- i + 1
-  #     # Report on speed of processing
-  #     if(i %% 5000 == 0) print(paste("Processed", i, "rows out of", nrow(blast.single.1)))
-  #   }
-  #   q.end <- i - 1
-  #   # extract rows for particular query gene
-  #   one.query <- blast.single.1[q.start:q.end, ]
-  #   # merge rows
-  #   # use values for the first hit
-  #   one.hit <- one.query[1, ]
-  #   # collapse hit names
-  #   one.hit$saccver <- paste(one.query$saccver, collapse = ", ")
-  #   # append to the existing object or make new object
-  #   if(exists("blast.single.2")) {
-  #     blast.single.2 <- rbind(blast.single.2, one.hit)
-  #   } else {
-  #     blast.single.2 <- one.hit
-  #   }
-  # }
   
   ## fast version using data.table
   
@@ -1041,7 +766,66 @@ write.table(x = stats.ortho, file = "figs_and_stats/supplementing_orthologues_st
 
 ```
 
-### Improving table with stats
+# Explanation of columns in output table
+
+Name of output tables (in [supplemented_orthologues](supplemented_orthologues/) directory): `Species_name__v__Arabidopsis_thaliana_supplemented.tsv`
+
+Columns:
+
+- **Species_name**: Gene IDs of the investigated species.
+- **prot_length**: Length of protein sequence of the longest/primary isoform used for OrthoFinder.
+- **Arabidopsis_thaliana**: Selected *A. thaliana* orthologues according to these rules:  
+		1. Use orthologues from orthologues table.  
+		2. If missing, use Blast RBH.  
+		3. If missing, use genes from N0 hierarchical orthogroups.  
+		4. If missing, use genes from broad orthogroups.  
+		5. If missing, use genes hits from simple Blast (but only those with BLAST_pident > 40 & BLAST_qcovhsp > 50)  
+			BLAST_pident: Percentage of identical matches (in local alignment)  
+			BLAST_qcovhsp: Query coverage per HSP (%)  
+				HSP = High-scoring Segment Pair (local alignment with no gaps)  
+- **single_Arabidopsis_thaliana**: Selected *A. thaliana* orthologue (only one) according to these rules:  
+		1. If there is only one *A. thaliana* gene in column `Arabidopsis_thaliana`, use that one.  
+		2. Else, if there is one and only RBH and it is among genes in column `Arabidopsis_thaliana`, take the RBH.  
+		3. Else, take the gene from the column `Arabidopsis_thaliana` that had the highest bitscore in the simple BLAST results. If several have the highest bitscore, take the first.  
+		4. If the genes in column `Arabidopsis_thaliana` are not among BLAST hits, take nothing.  
+			**Recommendation**: It is appealing to use the "single" orthologues (`single_Arabidopsis_thaliana`), because it makes things easier. However, I recommend to do that only in cases when it is absolutely necessary and otherwise use the column where there are multiple orthologues in some cases (`Arabidopsis_thaliana`). The real orthology is not always one-to-one due to multiplications of genes in some species (there is a good explanation in [OrthoFinder GitHub](https://github.com/davidemms/OrthoFinder)). The column `Arabidopsis_thaliana` should better reflect the real biology.
+- **homologue_type**: Type of selected *A. thaliana* orthologues in `Arabidopsis_thaliana` column.  
+		`orthologue` - orthologue from OrthoFinder orthologues table (method 1)  
+		`other` - homologue assigned by other method (2-5)  
+- **OL_Arabidopsis_thaliana**: *A. thaliana* orthologues from OrthoFinder orthologues table.
+- **N0_HOG**: N0 orthogroup ID from OrthoFinder N0 hierarchical orthogroups table.
+- **N0_Arabidopsis_thaliana**: *A. thaliana* orthologues/homologues from OrthoFinder N0 hierarchical orthogroups table.
+- **OG_Orthogroup**: Orthogroup ID from OrthoFinder orthogroups table.
+- **OG_Arabidopsis_thaliana**: *A. thaliana* orthologues/homologues from OrthoFinder orthogroups table.
+- **RBH_[...]**: Results of Reciprocal best hit (RBH) BLAST.  
+		`RBH_B_id` - ID from species B (*A. thaliana*)  
+		`RBH_A_length` - Length of protein sequence of the investigated (A) species (unfortunately including `*` in the end)  
+		`RBH_B_length` - Length of *A. thaliana* (species B) hit protein sequence (unfortunately including `*` in the end)  
+		`RBH_A_qcovhsp` - Percentage of sequence A covered by alignment (investigated species)  
+		`RBH_B_qcovhsp` - Percentage of sequence B covered by alignment (*A. thaliana*)  
+		`RBH_length` - HSP alignment length  
+		`RBH_pident` - HSP percentage identity  
+		`RBH_bitscore` - HSP bitscore  
+- **BLAST_[...]**: Results for highest-scoring hit of simple BLAST (investigated species against *A. thaliana* protein data  
+		`BLAST_qaccver` - Query (investigated species) accession and version  
+		`BLAST_saccver` - Subject (*A. thaliana*) accession and version  
+		`BLAST_pident` - Percentage of identical matches  
+		`BLAST_length` - Alignment length  
+		`BLAST_mismatch` - Number of mismatches  
+		`BLAST_gapopen` - Number of gap openings  
+		`BLAST_qstart` - Start of alignment in query  
+		`BLAST_qend` - End of alignment in query  
+		`BLAST_sstart` - Start of alignment in subject (database hit)  
+		`BLAST_send` - End of alignment in subject (database hit)  
+		`BLAST_evalue` - Expectation value (E-value)  
+		`BLAST_bitscore` - Bit score  
+		`BLAST_qcovhsp` - Query coverage per HSP (alignment) [%]  
+		`BLAST_qlen` - Query sequence length  
+		`BLAST_slen` - Subject sequence length  
+
+
+
+# Improving table with stats
 ```{r}
 setwd("D:/!ecolgen/Brassicaceae_orthology/brassicaceae_3/")
 if(!exists("old.par")) old.par<-par(no.readonly = T)

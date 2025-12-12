@@ -1,0 +1,144 @@
+---
+title: "Enriching list of orthologues"
+author: "Miloš Duchoslav"
+date: "2025-11"
+output:
+  github_document:
+    toc: true
+    toc_depth: 2
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+# Setting NO evaluation of code chunks as default (needed for knitting of bash code without trying to run that)
+knitr::opts_chunk$set(eval = FALSE)
+```
+
+# Introduction
+
+This RMarkdown file (or its markdown version for GitHub) documents supplementing the list of orthologues from OrthoFinder (run brassicaceae_2) with results from BLAST and with orthogroups from OrthoFinder to get *Arabidopsis thaliana* homologues for as many genes of the target species as possible. The homologues will be used in other scripts to transfer functional annotation from *Arabidopsis thaliana* genes.
+
+This file includes:
+
+1. BASH code that I ran at MetaCentrum (Czech national grid infrastructure) running PBS scheduling system for batch jobs.
+2. R code that I ran locally.
+
+### SW installation and versions
+
+The SW installation instructions and versions of SW used is described in [Installation_of_SW.md](Installation_of_SW.md).
+
+# Histograms of protein length
+
+```{r}
+setwd("D:/!ecolgen/Brassicaceae_orthology/brassicaceae_3/")
+if(!exists("old.par")) old.par<-par(no.readonly = T)
+
+# read the short version of annotation file
+length.files <- list.files(path = "protein_length_primary_transcripts/", pattern = ".tsv")
+species <- sub(pattern = "_protein_length.tsv", replacement = "", x = length.files, fixed = T)
+
+# chosen species for testing of the loop
+one.species <- "Arabidopsis_arenosa"
+
+
+### Start of the  loop
+
+# set boundaries and coarsness of frequency calculation
+l.min <- 0
+l.max <- 10000
+l.by <- 25
+# prepare data frames
+length.hist <- data.frame(bins = seq(from = l.min + (l.by / 2), to = l.max - (l.by / 2), by = l.by))
+# length.hist <- data.frame(bins = seq(from = 25, to = 9975, by = 50))
+length.stat <- data.frame()
+
+for(one.species in species) {
+	prot.length <- read.table(file = paste0("protein_length_primary_transcripts/", one.species, "_protein_length.tsv"), header = F, sep = "\t", na.strings = "",
+													comment.char = "", quote = "")
+	colnames(prot.length) <- c("gene", "prot_length")
+
+	# calculate data for histograms
+	hist(prot.length$prot_length, breaks = 50)
+	summary(prot.length$prot_length)
+	spec.hist <- hist(prot.length$prot_length, breaks = seq(from = l.min, to = l.max, by = l.by), xlim = c(0, 3000), main = one.species)
+	
+	# save to prepared dataframe
+	length.hist[, one.species] <- spec.hist$density
+
+	# save statistics to prepared dataframe
+	length.stat[1, "legend"] <- "Mean protein length"
+	length.stat[1, one.species] <- mean(prot.length$prot_length)
+	
+	length.stat[2, "legend"] <- "Median protein length"
+	length.stat[2, one.species] <- median(prot.length$prot_length)
+}
+## End of loop
+
+## export table with statistics
+dir.create(path = "figs_and_stats", recursive = T, showWarnings = F)
+write.table(x = length.stat, 
+						file = "figs_and_stats/protein_length_stats.tsv",
+						sep = "\t", row.names = F, na = "", quote = F)
+
+## Plotting histograms
+pdf ("figs_and_stats/prot_length_histogram.pdf", width=7, height=7, onefile = T)
+
+# all species
+g.data <- length.hist
+matplot(x = g.data$bins, y = g.data[, -1], type = "l", xlim = c(0, 2000), lty = 1, col = rainbow(ncol(g.data)-1), pch = 19,
+				main = "Protein length spectrum", ylab = "Frequency", xlab = "Protein length")
+legend(x = "topright", legend = colnames(g.data[-1]), col = rainbow(ncol(g.data)-1), lty = 1)
+
+# Focus species
+colnames(length.hist)
+g.data <- length.hist[, c("bins", "Aethionema_saxatile", "Alyssum_gmelinii", "Arabidopsis_arenosa", "Arabidopsis_lyrata_NCBI", "Arabidopsis_lyrata_Rawat", "Arabidopsis_thaliana", "Cardamine_amara", "Cardamine_glauca", "Erysimum_linariifolium", "Noccaea_praecox", "Odontarrhena_muralis")]
+matplot(x = g.data$bins, y = g.data[, -1], type = "l", xlim = c(0, 2000), lty = 1, col = rainbow(ncol(g.data)-1), pch = 19,
+				main = "Protein length spectrum", ylab = "Frequency", xlab = "Protein length")
+legend(x = "topright", legend = colnames(g.data[-1]), col = rainbow(ncol(g.data)-1), lty = 1)
+
+# Our annotations
+g.data <- length.hist[, c("bins", "Aethionema_saxatile", "Alyssum_gmelinii", "Cardamine_glauca", "Erysimum_linariifolium", "Noccaea_praecox", "Odontarrhena_muralis")]
+matplot(x = g.data$bins, y = g.data[, -1], type = "l", xlim = c(0, 2000), lty = 1, col = rainbow(ncol(g.data)-1), pch = 19,
+				main = "Protein length spectrum", ylab = "Frequency", xlab = "Protein length")
+legend(x = "topright", legend = colnames(g.data[-1]), col = rainbow(ncol(g.data)-1), lty = 1)
+
+# Resource paper
+g.data <- length.hist[, c("bins", "Aethionema_saxatile", "Cardamine_glauca", "Erysimum_linariifolium", "Noccaea_praecox", "Odontarrhena_muralis")]
+matplot(x = g.data$bins, y = g.data[, -1], type = "l", xlim = c(0, 2000), lty = 1, col = rainbow(ncol(g.data)-1), pch = 19,
+				main = "Protein length spectrum", ylab = "Frequency", xlab = "Protein length", lwd = 2)
+legend(x = "topright", legend = colnames(g.data[-1]), col = rainbow(ncol(g.data)-1), lwd = 2, lty = 1)
+
+# Resource paper + well-annotated species
+g.data <- length.hist[, c("bins", "Aethionema_saxatile", "Cardamine_glauca", "Erysimum_linariifolium", "Noccaea_praecox", "Odontarrhena_muralis", "Arabidopsis_lyrata_NCBI", "Arabidopsis_thaliana", "Brassica_rapa")]
+matplot(x = g.data$bins, y = g.data[, -1], type = "l", xlim = c(0, 2000), lty = 1, col = rainbow(ncol(g.data)-1), pch = 19,
+				main = "Protein length spectrum", ylab = "Frequency", xlab = "Protein length", lwd = 2)
+legend(x = "topright", legend = colnames(g.data[-1]), col = rainbow(ncol(g.data)-1), lwd = 2, lty = 1)
+
+dev.off()
+
+## Plot for publication
+# use palette from ColorBrewer
+require(RColorBrewer)
+display.brewer.all(n = 5, type = "qual", colorblindFriendly = T)
+# Resource paper
+g.data <- length.hist[, c("bins", "Aethionema_saxatile", "Cardamine_glauca", "Erysimum_linariifolium", "Noccaea_praecox", "Odontarrhena_muralis")]
+# Change to %
+g.data[, -1] <- g.data[, -1] * 100
+
+pdf ("figs_and_stats/prot_length_histogram_for_publication.pdf", width=7, height=7, onefile = T)
+matplot(x = g.data$bins, y = g.data[, -1], type = "l", xlim = c(0, 2000), lty = 1, col = brewer.pal(n = ncol(g.data)-1, name = "Dark2"), pch = 19,
+				main = "", ylab = "Frequency (%)", xlab = "Protein length", lwd = 2)
+g.legend <- gsub(pattern = "_", replacement = " ", x = colnames(g.data[-1]))
+legend(x = "topright", legend = g.legend, col = brewer.pal(n = ncol(g.data)-1, name = "Dark2"), lwd = 2, lty = 1, text.font = 3)
+dev.off()
+```
+
+To do:
+- Compare protein length spectra for reliable genes
+
+
+
+
+
+
