@@ -270,7 +270,7 @@ echo "Run ended: $species" | ts '[%Y-%m-%d %H:%M:%S]'
 # clean the SCRATCH directory
 clean_scratch
 
-
+# Resources: 100 % CPU, up to 2 h, 6 GB memory.
 ```
 
 ### Loop for submitting jobs for several species
@@ -288,18 +288,193 @@ done
 
 ```
 
+# Adding reliability table for species annotated by me
 
-
-
-Checks of the numbers
 ```{r}
-annotations.3 <- readRDS(file = "functional_annotation/Alyssum_gmelinii_At_orthologues_and_functional_annotations_full.rds")
+setwd("D:/!ecolgen/Brassicaceae_orthology/brassicaceae_3/")
+if(!exists("old.par")) old.par<-par(no.readonly = T)
 
-dim(annotations.3)
-sum(!is.na(annotations.3$Arabidopsis_thaliana))
-sum(!is.na(annotations.3$single_Arabidopsis_thaliana))
+# dirs with annotations
+dirs.list <- list.dirs(path = "D:/!ecolgen/annotations/", recursive = F)
+# support tables
+files.list <- list.files(path = paste0(dirs.list, "/final_files/"), pattern = "_protein_coding_genes_support.tsv", full.names = T)
+
+## preparation of dataframe for histogram data
+# set boundaries and coarsness of frequency calculation
+l.min <- 0
+l.max <- 10000
+l.by <- 25
+# prepare data frames
+length.hist <- data.frame(bins = seq(from = l.min + (l.by / 2), to = l.max - (l.by / 2), by = l.by))
+length.hist.1 <- data.frame(bins = seq(from = l.min + (l.by / 2), to = l.max - (l.by / 2), by = l.by))
+length.hist.2 <- data.frame(bins = seq(from = l.min + (l.by / 2), to = l.max - (l.by / 2), by = l.by))
+
+# write files?
+write.files <- F
+
+for(i in seq_along(files.list)) {
+	
+	supp <- read.table(file = files.list[i], header = T, sep = "\t")
+	# supp <- read.table(file = "final_files/Odontarrhena_muralis_CUNI_V1_annotation_v1.0_protein_coding_genes_support.tsv", header = T, sep = "\t")
+	
+	summary(supp)
+	
+	colnames(supp) <- paste0("support_", colnames(supp))
+	
+	# Extract species from file name
+	file.name <- gsub(pattern = "^.*/", replacement = "", x = files.list[i])
+	one.species <- gsub(pattern = "(^[^_]*_[^_]*).*", replacement = "\\1", x = file.name)
+	
+	# read RDS
+	annotations.3 <- readRDS(file = paste0("functional_annotation/4_full_rds/", one.species, "_At_orthologues_and_functional_annotations_full.rds"))
+	
+	colnames(annotations.3)
+	
+	# merge tables
+	annotations.4 <- merge(x = annotations.3, y = supp, by.x = one.species, by.y = "support_Gene", all = T)
+	
+	# column after which to move the supp columns
+	d <- 2
+	# move supp columns
+	annotations.5 <- annotations.4[, c(1:d, (ncol(annotations.3) + 1):ncol(annotations.4), (d + 1):ncol(annotations.3))]
+	
+	colnames(annotations.5)
+	
+	# save merged table
+	if(write.files) {
+		# make folder
+		dir.create(path = "functional_annotation/5_full_with_support_for_my_annotations_rds", recursive = T, showWarnings = F)
+		# write RDS
+		saveRDS(object = annotations.5, 
+						file = paste0("functional_annotation/5_full_with_support_for_my_annotations_rds/", one.species, "_support_and_At_orthologues_and_functional_annotations.rds"))
+	}
+	
+	# Genes supported by proteins from at least one species
+	support_any_protein <- rowSums(annotations.5[, c("support_A.lyrata.pep", "support_A.thaliana.pep", "support_B.rapa.pep")]) >= 1
+
+	# Genes with any support (either protein from at least one species or transcripts assembled from RNAseq)
+	support_any <- rowSums(annotations.5[, c("support_Assembled_transcripts", "support_A.lyrata.pep", "support_A.thaliana.pep", "support_B.rapa.pep")]) >= 1
+
+	# Genes with support of proteins from all species and transcripts
+	support_all <- rowSums(annotations.5[, c("support_Assembled_transcripts", "support_A.lyrata.pep", "support_A.thaliana.pep", "support_B.rapa.pep")]) == 4
+	
+	# calculate data for histograms
+	# hist(annotations.5$prot_length[annotations.5$support_Assembled_transcripts == 1], breaks = 50)
+	# hist(annotations.5$prot_length[support_any == 1], breaks = 50)
+	
+	# all proteins
+	spec.hist <- hist(annotations.5$prot_length, breaks = seq(from = l.min, to = l.max, by = l.by), xlim = c(0, 3000), main = one.species)
+	# proteins with any support (either protein from at least one species or transcripts assembled from RNAseq)
+	spec.hist.1 <- hist(annotations.5$prot_length[support_any == 1], breaks = seq(from = l.min, to = l.max, by = l.by), xlim = c(0, 3000), main = one.species)
+	# proteins with support of proteins from all species and transcripts
+	spec.hist.2 <- hist(annotations.5$prot_length[support_all == 1], breaks = seq(from = l.min, to = l.max, by = l.by), xlim = c(0, 3000), main = one.species)
+	
+	# save to prepared dataframe
+	length.hist[, one.species] <- spec.hist$density
+	length.hist.1[, one.species] <- spec.hist.1$density
+	length.hist.2[, one.species] <- spec.hist.2$density
+	
+}
+
+## Plotting histograms
+pdf ("figs_and_stats/prot_length_histogram_supported_proteins.pdf", width=7, height=7, onefile = T)
+
+# plots input
+g.input <- c("length.hist", "length.hist.1", "length.hist.2")
+g.sub <- c("All genes", 
+						"Genes supported by aligned protein from at least one species or by transcript",
+						"Genes supported by aligned proteins from all three species and by transcript")
+# all species
+for(i in seq_along(g.input)) {
+	g.data <- get(g.input[i])
+	matplot(x = g.data$bins, y = g.data[, -1], type = "l", xlim = c(0, 2000), lty = 1, col = rainbow(ncol(g.data)-1), pch = 19, lwd = 2,
+					main = "Protein length spectrum", ylab = "Frequency", xlab = "Protein length (amino acid residues)")
+	legend(x = "topright", legend = colnames(g.data[-1]), col = rainbow(ncol(g.data)-1), lty = 1, lwd = 2)
+	mtext(text = g.sub[i])
+}
+
+# Resource paper
+for(i in seq_along(g.input)) {
+	g.data <- get(g.input[i])[, c("bins", "Aethionema_saxatile", "Cardamine_glauca", "Erysimum_linariifolium", "Noccaea_praecox", "Odontarrhena_muralis")]
+	matplot(x = g.data$bins, y = g.data[, -1], type = "l", xlim = c(0, 2000), lty = 1, col = rainbow(ncol(g.data)-1), pch = 19,
+				main = "Protein length spectrum", ylab = "Frequency", xlab = "Protein length (amino acid residues)", lwd = 2)
+	legend(x = "topright", legend = colnames(g.data[-1]), col = rainbow(ncol(g.data)-1), lty = 1, lwd = 2)
+	mtext(text = g.sub[i])
+}
+dev.off()
+
+## Plot for publication
+# use palette from ColorBrewer
+require(RColorBrewer)
+display.brewer.all(n = 5, type = "qual", colorblindFriendly = T)
+
+# plots input
+g.input <- c("length.hist", "length.hist.1", "length.hist.2")
+g.sub <- c("All genes", 
+						"Genes supported by aligned protein from at least one species or by transcript",
+						"Genes supported by aligned proteins from all three species and by transcript")
+
+# Resource paper
+pdf ("figs_and_stats/prot_length_histogram_for_publication_supported_proteins.pdf", width=7, height=7, onefile = T)
+for(i in seq_along(g.input)) {
+	g.data <- get(g.input[i])[, c("bins", "Aethionema_saxatile", "Cardamine_glauca", "Erysimum_linariifolium", "Noccaea_praecox", "Odontarrhena_muralis")]
+	# Change to %
+	g.data[, -1] <- g.data[, -1] * 100
+	matplot(x = g.data$bins, y = g.data[, -1], type = "l", xlim = c(0, 2000), lty = 1, col = brewer.pal(n = ncol(g.data)-1, name = "Dark2"), pch = 19,
+					main = "", ylab = "Frequency (%)", xlab = "Protein length (amino acid residues)", lwd = 2, ylim = c(0, 0.3))
+	g.legend <- gsub(pattern = "_", replacement = " ", x = colnames(g.data[-1]))
+	legend(x = "topright", legend = g.legend, col = brewer.pal(n = ncol(g.data)-1, name = "Dark2"), lwd = 2, lty = 1, text.font = 3)
+	mtext(text = g.sub[i], line = 2)
+}
+dev.off()
+
+pdf ("figs_and_stats/prot_length_histogram_for_publication_supported_proteins_2.pdf", width=10, height=5, onefile = T)
+par(mfrow = c(1, 2))
+for(i in 1:2) {
+	g.data <- get(g.input[i])[, c("bins", "Aethionema_saxatile", "Cardamine_glauca", "Erysimum_linariifolium", "Noccaea_praecox", "Odontarrhena_muralis")]
+	# Change to %
+	g.data[, -1] <- g.data[, -1] * 100
+	matplot(x = g.data$bins, y = g.data[, -1], type = "l", xlim = c(0, 2000), lty = 1, col = brewer.pal(n = ncol(g.data)-1, name = "Dark2"), pch = 19,
+					main = "", ylab = "Frequency (%)", xlab = "Protein length (amino acid residues)", lwd = 2, ylim = c(0, 0.3), las = 1)
+	g.legend <- gsub(pattern = "_", replacement = " ", x = colnames(g.data[-1]))
+	legend(x = "topright", legend = g.legend, col = brewer.pal(n = ncol(g.data)-1, name = "Dark2"), lwd = 2, lty = 1, text.font = 3)
+	# mtext(text = g.sub[i], line = 2)
+	mtext(text = c("A", "B")[i], line = 2, adj = 0, font = 2, cex = 2)
+}
+par(old.par)
+dev.off()
+
+svg ("figs_and_stats/prot_length_histogram_for_publication_supported_proteins_3.svg", width=180/25.4, height=90/25.4, onefile = T)
+par(mfrow = c(1, 2), cex = 0.75)
+for(i in 1:2) {
+	g.data <- get(g.input[i])[, c("bins", "Aethionema_saxatile", "Cardamine_glauca", "Erysimum_linariifolium", "Noccaea_praecox", "Odontarrhena_muralis")]
+	# Change to %
+	g.data[, -1] <- g.data[, -1] * 100
+	matplot(x = g.data$bins, y = g.data[, -1], type = "l", xlim = c(0, 2000), lty = 1, col = brewer.pal(n = ncol(g.data)-1, name = "Dark2"), pch = 19,
+					main = "", ylab = "Frequency (%)", xlab = "Protein length (amino acid residues)", lwd = 2, ylim = c(0, 0.3), las = 1)
+	g.legend <- gsub(pattern = "_", replacement = " ", x = colnames(g.data[-1]))
+	legend(x = "topright", legend = g.legend, col = brewer.pal(n = ncol(g.data)-1, name = "Dark2"), lwd = 2, lty = 1, text.font = 3)
+	# mtext(text = g.sub[i], line = 2)
+		# mtext(text = c("a", "b")[i], line = 2, adj = 0, font = 2, cex = 2)
+	mtext(text = c(expression(bold("a") * " All gene models"), expression(bold("b") * " Gene models with external evidence"))[i], line = 1.5, adj = 0, font = 1, cex = 1, outer = F)
+}
+par(old.par)
+dev.off()
+
+# just range of short proteins
+for(i in seq_along(g.input)) {
+	g.data <- get(g.input[i])[, c("bins", "Aethionema_saxatile", "Cardamine_glauca", "Erysimum_linariifolium", "Noccaea_praecox", "Odontarrhena_muralis")]
+	# Change to %
+	g.data[, -1] <- g.data[, -1] * 100
+	matplot(x = g.data$bins, y = g.data[, -1], type = "l", xlim = c(0, 500), lty = 1, col = brewer.pal(n = ncol(g.data)-1, name = "Dark2"), pch = 19,
+					main = "", ylab = "Frequency (%)", xlab = "Protein length (amino acid residues)", lwd = 2, ylim = c(0, 0.3))
+	g.legend <- gsub(pattern = "_", replacement = " ", x = colnames(g.data[-1]))
+	legend(x = "topright", legend = g.legend, col = brewer.pal(n = ncol(g.data)-1, name = "Dark2"), lwd = 2, lty = 1, text.font = 3)
+	mtext(text = g.sub[i], line = 2)
+}
 
 ```
+
 
 
 # Statistics of functional annotation
@@ -353,6 +528,8 @@ for(one.species in species) {
 	go.stat[4, "legend"] <- "Genes with some GO term"
 	# go.stat[4, one.species] <- 100 -100*sum(is.na(short.ann$GO_term_IDs))/nrow(short.ann)
 	go.stat[4, one.species] <- paste0(formatC(x = sum(!is.na(short.ann$GO_term_IDs)), big.mark = " "), " (", round(sum(!is.na(short.ann$GO_term_IDs))/nrow(short.ann), 2)*100, "%)")
+	
+	print(paste(one.species, "done."))
 }
 ## End of loop
 
@@ -402,54 +579,6 @@ dev.off()
 
 ### Results
 
-As in other statistics, *Cochlearia* seems to have over-predicted genes. Almost 30 % of it's genes don't have any GO term annotation, which is much higner than in other species. Most of them are probably not real protein-coding genes.
+As in other statistics, *Cochlearia* seems to have over-predicted genes. Almost 30 % of it's genes doesn't have any GO term annotation, which is much higher than in other species. Most of them are probably not real protein-coding genes.
 
-## Comparison with older version
-
-```{r}
-## older version (2.0)
-short.ann <- read.table(file = "../brassicaceae_2/R_analysis/Arabidopsis_arenosa_At_orthologues_and_functional_annotations_shortened.tsv", header = T, sep = "\t", na.strings = "",
-												comment.char = "", quote = "")
-
-# number of GO terms
-go.num <- sapply(X = short.ann$GO_term_IDs, FUN = function(x) {sum(unlist(gregexpr(pattern = "GO:", text = x)) > 0)}, USE.NAMES = F)
-go.num[is.na(short.ann$GO_term_IDs)] <- 0
-
-hist(go.num, breaks = (0:100)-0.5, xlim = c(0, 30))
-# mean
-mean(go.num)
-# median
-median(go.num)
-# Percent of genes without GO term
-100*sum(is.na(short.ann$GO_term_IDs))/nrow(short.ann)
-
-
-
-```
-
-In A. arenosa, all of the numbers got better. The number of genes without GO terms decreased from 18 % to 7 %.
-
-
-## Some checks
-```{r}
-sum(is.na(short.ann$Arabidopsis_thaliana))
-sum(grepl(pattern = "AT", x = short.ann$Arabidopsis_thaliana))
-dim(short.ann)
-
-dim(prot.length)
-
-head(short.ann)
-head(prot.length)
-
-all(short.ann$Arabidopsis_arenosa %in% prot.length$gene)
-all(prot.length$gene %in% short.ann$Arabidopsis_arenosa)
-prot.length$gene[!prot.length$gene %in% short.ann$Arabidopsis_arenosa]
-
-aa <- read.table(file = "supplemented_orthologues/Arabidopsis_arenosa__v__Arabidopsis_thaliana_supplemented.tsv", header = T, sep = "\t", na.strings = "",
-												comment.char = "", quote = "")
-dim(aa)
-
-bb <- readRDS("functional_annotation/4_full_rds/Arabidopsis_arenosa_At_orthologues_and_functional_annotations_full.rds")
-dim(bb)
-```
 
