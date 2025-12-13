@@ -112,7 +112,7 @@ Version 3.0 (2025-10)
 2. Supplementing orthologues in *A. thaliana* with other types of homologues
 	- [GitHub md file](2_Supplementing_orthologues.md) | [original RMarkdown file](2_Supplementing_orthologues.Rmd)
 3. Functional annotation of genes (from [InterProScan](https://interproscan-docs.readthedocs.io) and annotation of *A. thaliana* homologues)
-	- [GitHub md file](3_Functional_annotations_all_species.md) | [original RMarkdown file](3_Functional_annotations_all_species.Rmd)
+	- [GitHub md file](3_Functional_annotations.md) | [original RMarkdown file](3_Functional_annotations.Rmd)
 4. Statistics and plots (partially also in previous scripts)
 	- [GitHub md file](4_Stats_and_plots.md) | [original RMarkdown file](4_Stats_and_plots.Rmd)
 	
