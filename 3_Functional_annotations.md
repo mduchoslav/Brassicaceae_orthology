@@ -1,0 +1,889 @@
+Functional annotations
+================
+Miloš Duchoslav
+2025-11
+
+- [Introduction](#introduction)
+- [Strategy](#strategy)
+  - [Detailed sources of *A. thaliana*
+    annotations](#detailed-sources-of-a-thaliana-annotations)
+- [InterProScan - direct annotation of the genes of desired species (not
+  *A. thaliana*
+  orthologues)](#interproscan---direct-annotation-of-the-genes-of-desired-species-not-a-thaliana-orthologues)
+  - [InterProScan - preparation of input
+    files](#interproscan---preparation-of-input-files)
+  - [InterProScan run](#interproscan-run)
+- [Functional annotations of *Arabidopsis thaliana*
+  orthologs](#functional-annotations-of-arabidopsis-thaliana-orthologs)
+  - [Compilation of annotations from several
+    sources](#compilation-of-annotations-from-several-sources)
+- [Adding reliability table for species annotated by
+  me](#adding-reliability-table-for-species-annotated-by-me)
+- [Statistics of functional
+  annotation](#statistics-of-functional-annotation)
+  - [GO terms](#go-terms)
+- [Description of output tables](#description-of-output-tables)
+  - [Explanation of columns in the output
+    tables](#explanation-of-columns-in-the-output-tables)
+
+# Introduction
+
+This RMarkdown file (or its markdown version for GitHub) documents
+compiling functional annotation from several sources.
+
+This file includes:
+
+1.  BASH code that I ran at MetaCentrum (Czech national grid
+    infrastructure) running PBS scheduling system for batch jobs.
+2.  R code that I ran locally.
+
+### SW installation and versions
+
+The SW installation instructions and versions of SW used is described in
+[Installation_of_SW.md](Installation_of_SW.md).
+
+# Strategy
+
+Sources of functional annotation:
+
+1.  TAIR ([arabidopsis.org](https://www.arabidopsis.org/)) functional
+    annotations for *A. thaliana* homologues
+2.  [plantcyc.org](https://plantcyc.org/) functional annotations for *A.
+    thaliana* homologues
+3.  [UniProt](https://www.uniprot.org/uniprot/?query=proteome%3Aup000006548)
+    functional annotations for *A. thaliana* homologues
+4.  [InterProScan](https://interproscan-docs.readthedocs.io) results for
+    protein sequences of the given species
+
+In case of several *A. thaliana* homologues assigned to one gene,
+annotation of all of them was compiled together.
+
+## Detailed sources of *A. thaliana* annotations
+
+Extracted from script
+[functional_annotation_compilation_executable.r](functional_annotation_compilation_executable.r).
+
+    ## Gene aliases
+    # File "gene_aliases_20241001.txt.gz"
+    # Downloaded on 2024-12-09 from
+    # https://v2.arabidopsis.org/download_files/Subscriber_Data_Releases/TAIR_Data_20240930/gene_aliases_20241001.txt.gz
+    # (web page https://v2.arabidopsis.org/download/index-auto.jsp?dir=%2Fdownload_files%2FSubscriber_Data_Releases%2FTAIR_Data_20240930)
+
+    ## Subcellular predictions
+    # File "Araport11-Subcellular_Predictions_version_2024_03_09.txt"
+    # Downloaded on 2024-12-09 from https://www.arabidopsis.org/download/list?dir=Genes%2FAraport11_genome_release
+
+    ## Functional descriptions from arabidopsis.org
+    # File "Araport11_functional_descriptions_20241001.txt.gz"
+    # Downloaded on 2024-12-09 from
+    # https://v2.arabidopsis.org/download_files/Subscriber_Data_Releases/TAIR_Data_20240930/Araport11_functional_descriptions_20241001.txt.gz 
+    # (web page https://v2.arabidopsis.org/download/index-auto.jsp?dir=%2Fdownload_files%2FSubscriber_Data_Releases%2FTAIR_Data_20240930)
+
+    ## GO annotations from arabidopsis.org
+    # Downloaded on 2025-11-11 from
+    # https://www.arabidopsis.org/download/file?path=Public_Data_Releases/TAIR_Data_20240930/ATH_GO_GOSLIM.txt.gz 
+    # (web page https://www.arabidopsis.org/download/list?dir=Public_Data_Releases%2FTAIR_Data_20240930)
+
+    ## Metabolic pathways
+    # File "aracyc_pathways.20230103"
+    # Downloaded on 2024-12-09 from
+    # https://plantcyc-ftp.storage.googleapis.com/pmn/Pathways/Data_dumps/PMN15.5_January2023/pathways/aracyc_pathways.20230103
+    # (web page https://plantcyc.org/)
+
+    ## Annotations from Uniprot
+    # File "uniprotkb_proteome_up000006548_2025_11_11.tsv.gz"
+    # Downloaded on 2025-11-11 from https://www.uniprot.org/uniprot/?query=proteome%3Aup000006548.
+    # I selected the desired columns for view and then downloaded that as a table.
+
+# InterProScan - direct annotation of the genes of desired species (not *A. thaliana* orthologues)
+
+Inspiration from:
+
+Lian, Qichao, Bruno Huettel, Birgit Walkemeier, Baptiste Mayjonade,
+Céline Lopez-Roques, Lisa Gil, Fabrice Roux, Korbinian Schneeberger, and
+Raphael Mercier. “A Pan-Genome of 69 Arabidopsis Thaliana Accessions
+Reveals a Conserved Genome Structure throughout the Global Species
+Range.” Nature Genetics 56, no. 5 (May 2024): 982–91.
+<https://doi.org/10.1038/s41588-024-01715-9>.:
+
+The resulting gene models were further annotated functionally using
+InterProScan v5.59-91.0 (ref. 109) (parameters: -f TSV -t p -iprlookup
+-goterms -pa).
+
+## InterProScan - preparation of input files
+
+``` sh
+cd /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/
+mkdir interproscan
+
+cd /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/interproscan
+
+## Removing asterisks from protein sequences
+
+# Interproscan doesn't like * in protein sequences, even in the end. We have to remove them from theprotein sequences.
+
+# checking for internal stop codons (* in the middle of sequence)
+for file in ../primary_transcripts/*.fasta
+do
+STOPS=$(awk '/^>/ { if(NR>1) print "";  printf("%s\n",$0); next; } { printf("%s",$0);}  END {printf("\n");}' < $file | grep \*[[:alpha:]] | wc -l)
+echo $file $STOPS
+done
+
+# checking for * anywhere
+grep '\*' ../primary_transcripts/Arabidopsis_arenosa.fasta | wc -l # 33901
+
+# check of sed command
+sed -E 's/\*//g' ../primary_transcripts/Noccaea_praecox.fasta | less
+
+## remove all asterisks from protein sequences
+# Note: This will remove also internal stop codons in bad proteins.
+
+mkdir -p primary_transcripts_without_stops
+
+for file in ../primary_transcripts/*.fasta
+do
+  # get filename without path
+  filename=$(echo $file | sed 's,^.*/,,')
+  
+  # remove all asterisks from lines that do not start with >
+  sed -E 's/\*//g' ../primary_transcripts/$filename > primary_transcripts_without_stops/$filename
+done
+```
+
+## InterProScan run
+
+``` sh
+### Metacentrum script
+
+#PBS -N InterProScan_all_species
+#PBS -l select=1:ncpus=8:mem=96gb:scratch_local=200gb
+#PBS -l walltime=24:00:00 
+#PBS -m ae
+
+## It is needed to set the $species variable during submitting the job like this:
+# for species in Alyssum_gmelinii Arabidopsis_arenosa Arabidopsis_lyrata_NCBI Cardamine_glauca Noccaea_praecox
+# do
+# echo "Submitting job for species: $species"
+# qsub  -v "species=$species" InterProScan_all_species.bash
+# done
+
+echo "Species for this job: $species"
+
+# define variables
+query_fasta="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/interproscan/primary_transcripts_without_stops/$species.fasta"
+output_dir=/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/interproscan
+
+# append a line to a file "jobs_info.txt" containing the ID of the job, the hostname of node it is run on and the path to a scratch directory
+# this information helps to find a scratch directory in case the job fails and you need to remove the scratch directory manually 
+echo "$PBS_JOBID is running on node `hostname -f` in a scratch directory $SCRATCHDIR" | ts '[%Y-%m-%d %H:%M:%S]' >> $PBS_O_WORKDIR/jobs_info.txt
+
+# test if scratch directory is set
+# if scratch directory is not set, issue error message and exit
+test -n "$SCRATCHDIR" || { echo >&2 "Variable SCRATCHDIR is not set!"; exit 1; }
+
+# move into scratch directory
+cd $SCRATCHDIR 
+
+# load Java
+module load openjdk
+module list
+
+# run InterProScan
+/storage/brno12-cerit/home/duchmil/SW/InterProScan/interproscan-5.76-107.0/interproscan.sh --goterms --pathways --enable-tsv-residue-annot --tempdir $SCRATCHDIR --cpu 8 -i $query_fasta --output-file-base $species
+
+echo "Main calculation done." | ts '[%Y-%m-%d %H:%M:%S]'
+
+# compress output files
+pigz -v -p 8 $species.*
+
+# move the output to user's DATADIR or exit in case of failure
+mkdir -p $output_dir # will make folder if it doesn't exist
+cp -v $species.* $output_dir/ || { echo >&2 "Result file(s) copying failed (with a code $?) !!"; exit 4; }
+
+echo "Copying output file to $output_dir done." | ts '[%Y-%m-%d %H:%M:%S]'
+
+# clean the SCRATCH directory
+clean_scratch
+
+# Resources: From 2 h (A. thaliana, probably most precomputed results) up to 24 h (Cochlearia excelsa, many proteins). For most around 10 h, 60-90 % CPU, 50-96 GB memory.
+```
+
+### Loop for submitting jobs for several species
+
+``` sh
+cd /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/metacentrum_scripts
+
+# for species in Aethionema_saxatile Alyssum_gmelinii Arabidopsis_arenosa Arabidopsis_lyrata_NCBI Arabidopsis_lyrata_Rawat Arabidopsis_thaliana Arabis_alpina Brassica_napus Brassica_oleracea Brassica_rapa Camelina_sativa Capsella_rubella Cardamine_amara Cardamine_glauca Cardamine_hirsuta Cochlearia_excelsa Conringia_planisiliqua Erysimum_linariifolium Euclidium_syriacum Eutrema_salsugineum Noccaea_praecox Odontarrhena_muralis Raphanus_sativus
+# for species in Aethionema_saxatile
+# for species in Alyssum_gmelinii Arabidopsis_arenosa Arabidopsis_lyrata_NCBI Arabidopsis_lyrata_Rawat Cardamine_amara Cardamine_glauca Erysimum_linariifolium Noccaea_praecox Odontarrhena_muralis
+for species in Arabidopsis_thaliana Arabis_alpina Brassica_napus Brassica_oleracea Brassica_rapa Camelina_sativa Capsella_rubella Cardamine_hirsuta Cochlearia_excelsa Conringia_planisiliqua Euclidium_syriacum Eutrema_salsugineum Raphanus_sativus
+do
+echo "Submitting job for species: $species"
+qsub  -v "species=$species" InterProScan_all_species.bash
+done
+```
+
+### Interproscan results
+
+``` sh
+cd /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/interproscan
+
+# view beginning as table
+zcat Arabidopsis_arenosa.tsv.gz | head -n 1000 | column -t -s $'\t' |  less -S
+
+zcat Arabidopsis_arenosa.tsv.gz | wc -l # 315161 (older run with older version of Interproscan: 313362)
+
+zcat Arabidopsis_arenosa.tsv.gz | cut -f 1 | sort | uniq | wc -l # 31121 (out of 33901 proteins) (older run with older version of Interproscan: 31111)
+
+# sites
+zless -S Arabidopsis_arenosa.tsv.sites.gz
+
+zcat Arabidopsis_arenosa.tsv.sites.gz | cut -f 1 | sort | uniq | wc -l # 11409 (out of 33901 proteins)
+```
+
+#### TSV description
+
+<https://interproscan-docs.readthedocs.io/en/latest/OutputFormats.html>
+
+The TSV format presents the match data in columns as follows:
+
+    Protein accession (e.g. P51587)
+
+    Sequence MD5 digest (e.g. 14086411a2cdf1c4cba63020e1622579)
+
+    Sequence length (e.g. 3418)
+
+    Analysis (e.g. Pfam / PRINTS / Gene3D)
+
+    Signature accession (e.g. PF09103 / G3DSA:2.40.50.140)
+
+    Signature description (e.g. BRCA2 repeat profile)
+
+    Start location
+
+    Stop location
+
+    Score - is the e-value (or score) of the match reported by member database method (e.g. 3.1E-52)
+
+    Status - is the status of the match (T: true)
+
+    Date - is the date of the run
+
+    InterPro annotations - accession (e.g. IPR002093)
+
+    InterPro annotations - description (e.g. BRCA2 repeat)
+
+    GO annotations with their source(s), e.g. GO:0005515(InterPro)|GO:0006302(PANTHER)|GO:0007195(InterPro,PANTHER). This is an optional column; only displayed if the --goterms option is switched on
+
+    Pathways annotations, e.g. REACT_71. This is an optional column; only displayed if the --pathways option is switched on
+
+#### Analysis description
+
+                      TIGRFAM (XX.X) : TIGRFAMs are protein families based on hidden Markov models (HMMs).
+                         SFLD (X) : SFLD is a database of protein families based on hidden Markov models (HMMs).
+                  SUPERFAMILY (X.XX) : SUPERFAMILY is a database of structural and functional annotations for all proteins and genomes.
+                      PANTHER (XX.X) : The PANTHER (Protein ANalysis THrough Evolutionary Relationships) Classification System is a unique resource that classifies genes by their functions, using published scientific experimental evidence and evolutionary relationships to predict function even in the absence of direct experimental evidence.
+                       Gene3D (X.X.X) : Structural assignment for whole genes and genomes using the CATH domain structure database.
+                        Hamap (XXXX_XX) : High-quality Automated and Manual Annotation of Microbial Proteomes.
+                  ProSiteProfiles (XXX_XX) : PROSITE consists of documentation entries describing protein domains, families and functional sites as well as associated patterns and profiles to identify them.
+                        Coils (X.X.X) : Prediction of coiled coil regions in proteins.
+                        SMART (X.X) : SMART allows the identification and analysis of domain architectures based on hidden Markov models (HMMs).
+                          CDD (X.XX) : CDD predicts protein domains and families based on a collection of well-annotated multiple sequence alignment models.
+                       PRINTS (XX.X) : A compendium of protein fingerprints - a fingerprint is a group of conserved motifs used to characterise a protein family.
+                        PIRSR (XXXX_XX) : PIRSR is a database of protein families based on hidden Markov models (HMMs) and Site Rules.
+                  ProSitePatterns (XXXX_XX) : PROSITE consists of documentation entries describing protein domains, families and functional sites as well as associated patterns and profiles to identify them.
+                      AntiFam (X.X) : AntiFam is a resource of profile-HMMs designed to identify spurious protein predictions.
+                         Pfam (XX.X) : A large collection of protein families, each represented by multiple sequence alignments and hidden Markov models (HMMs).
+                   MobiDBLite (X.X) : Prediction of intrinsically disordered regions in proteins.
+                        PIRSF (X.XX) : The PIRSF concept is used as a guiding principle to provide comprehensive and non-overlapping clustering of UniProtKB sequences into a hierarchical order to reflect their evolutionary relationships.
+
+# Functional annotations of *Arabidopsis thaliana* orthologs
+
+## Compilation of annotations from several sources
+
+The compilation is done by executable R script
+[functional_annotation_compilation_executable.r](functional_annotation_compilation_executable.r).
+The script is not optimised for speed, the computation can take up to 2
+h per species. Extraction of the commands to the executable script
+allowed me to run it distantly in parallel jobs.
+
+### List of species
+
+``` r
+setwd("D:/!ecolgen/Brassicaceae_orthology/brassicaceae_3/")
+old.par<-par(no.readonly = T)
+
+# read species names
+interpro.files <- list.files(path = "interproscan/", pattern = ".tsv.gz")
+species <- sub(pattern = ".tsv.gz", replacement = "", x = interpro.files, fixed = T)
+species
+```
+
+### Testing of script
+
+``` sh
+cd /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3
+
+# load R
+module load r/4.1.3-gcc-10.2.1-6xt26dl
+
+Rscript --verbose "functional_annotation_compilation_executable.r" Aethionema_saxatile
+```
+
+### Bash script for running of R script (compilation of functional annotations)
+
+``` sh
+### Metacentrum script
+
+#PBS -N functional_annotation_compilation
+#PBS -l select=1:ncpus=1:mem=32gb:scratch_local=200gb
+#PBS -l walltime=24:00:00 
+#PBS -m ae
+
+## It is needed to set the $species variable during submitting the job like this:
+# for species in Alyssum_gmelinii Arabidopsis_arenosa Arabidopsis_lyrata_NCBI Cardamine_glauca Noccaea_praecox
+# do
+# echo "Submitting job for species: $species"
+# qsub  -v "species=$species" InterProScan_all_species.bash
+# done
+
+echo "Species for this job: $species" | ts '[%Y-%m-%d %H:%M:%S]'
+
+# append a line to a file "jobs_info.txt" containing the ID of the job, the hostname of node it is run on and the path to a scratch directory
+# this information helps to find a scratch directory in case the job fails and you need to remove the scratch directory manually 
+echo "$PBS_JOBID is running on node `hostname -f` in a scratch directory $SCRATCHDIR" | ts '[%Y-%m-%d %H:%M:%S]' >> $PBS_O_WORKDIR/jobs_info.txt
+
+# move to working dir
+cd /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3
+
+# load R
+module load r/4.1.3-gcc-10.2.1-6xt26dl
+
+# run R script
+Rscript --verbose "functional_annotation_compilation_executable.r" $species || { echo >&2 "Rscript failed!"; exit 1; }
+
+echo "Run ended: $species" | ts '[%Y-%m-%d %H:%M:%S]'
+
+# clean the SCRATCH directory
+clean_scratch
+
+# Resources: 100 % CPU, up to 2 h, 6 GB memory.
+```
+
+### Loop for submitting jobs for several species
+
+``` sh
+cd /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/metacentrum_scripts
+
+# for species in Aethionema_saxatile Alyssum_gmelinii Arabidopsis_arenosa Arabidopsis_lyrata_NCBI Arabidopsis_lyrata_Rawat Arabis_alpina Brassica_napus Brassica_oleracea Brassica_rapa Camelina_sativa Capsella_rubella Cardamine_amara Cardamine_glauca Cardamine_hirsuta Cochlearia_excelsa Conringia_planisiliqua Erysimum_linariifolium Euclidium_syriacum Eutrema_salsugineum Noccaea_praecox Odontarrhena_muralis Raphanus_sativus
+# for species in Alyssum_gmelinii Arabidopsis_arenosa
+for species in Arabidopsis_lyrata_NCBI Arabidopsis_lyrata_Rawat Arabis_alpina Brassica_napus Brassica_oleracea Brassica_rapa Camelina_sativa Capsella_rubella Cardamine_amara Cardamine_glauca Cardamine_hirsuta Cochlearia_excelsa Conringia_planisiliqua Erysimum_linariifolium Euclidium_syriacum Eutrema_salsugineum Noccaea_praecox Odontarrhena_muralis Raphanus_sativus
+do
+echo "Submitting job for species: $species"
+qsub  -v "species=$species" functional_annotation_compilation.bash
+done
+```
+
+# Adding reliability table for species annotated by me
+
+``` r
+setwd("D:/!ecolgen/Brassicaceae_orthology/brassicaceae_3/")
+if(!exists("old.par")) old.par<-par(no.readonly = T)
+
+# dirs with annotations
+dirs.list <- list.dirs(path = "D:/!ecolgen/annotations/", recursive = F)
+# support tables
+files.list <- list.files(path = paste0(dirs.list, "/final_files/"), pattern = "_protein_coding_genes_support.tsv", full.names = T)
+
+## preparation of dataframe for histogram data
+# set boundaries and coarsness of frequency calculation
+l.min <- 0
+l.max <- 10000
+l.by <- 25
+# prepare data frames
+length.hist <- data.frame(bins = seq(from = l.min + (l.by / 2), to = l.max - (l.by / 2), by = l.by))
+length.hist.1 <- data.frame(bins = seq(from = l.min + (l.by / 2), to = l.max - (l.by / 2), by = l.by))
+length.hist.2 <- data.frame(bins = seq(from = l.min + (l.by / 2), to = l.max - (l.by / 2), by = l.by))
+
+# write files?
+write.files <- F
+
+for(i in seq_along(files.list)) {
+    
+    supp <- read.table(file = files.list[i], header = T, sep = "\t")
+    # supp <- read.table(file = "final_files/Odontarrhena_muralis_CUNI_V1_annotation_v1.0_protein_coding_genes_support.tsv", header = T, sep = "\t")
+    
+    summary(supp)
+    
+    colnames(supp) <- paste0("support_", colnames(supp))
+    
+    # Extract species from file name
+    file.name <- gsub(pattern = "^.*/", replacement = "", x = files.list[i])
+    one.species <- gsub(pattern = "(^[^_]*_[^_]*).*", replacement = "\\1", x = file.name)
+    
+    # read RDS
+    annotations.3 <- readRDS(file = paste0("functional_annotation/4_full_rds/", one.species, "_At_orthologues_and_functional_annotations_full.rds"))
+    
+    colnames(annotations.3)
+    
+    # merge tables
+    annotations.4 <- merge(x = annotations.3, y = supp, by.x = one.species, by.y = "support_Gene", all = T)
+    
+    # column after which to move the supp columns
+    d <- 2
+    # move supp columns
+    annotations.5 <- annotations.4[, c(1:d, (ncol(annotations.3) + 1):ncol(annotations.4), (d + 1):ncol(annotations.3))]
+    
+    colnames(annotations.5)
+    
+    # save merged table
+    if(write.files) {
+        # make folder
+        dir.create(path = "functional_annotation/5_full_with_support_for_my_annotations_rds", recursive = T, showWarnings = F)
+        # write RDS
+        saveRDS(object = annotations.5, 
+                        file = paste0("functional_annotation/5_full_with_support_for_my_annotations_rds/", one.species, "_support_and_At_orthologues_and_functional_annotations.rds"))
+    }
+    
+    # Genes supported by proteins from at least one species
+    support_any_protein <- rowSums(annotations.5[, c("support_A.lyrata.pep", "support_A.thaliana.pep", "support_B.rapa.pep")]) >= 1
+
+    # Genes with any support (either protein from at least one species or transcripts assembled from RNAseq)
+    support_any <- rowSums(annotations.5[, c("support_Assembled_transcripts", "support_A.lyrata.pep", "support_A.thaliana.pep", "support_B.rapa.pep")]) >= 1
+
+    # Genes with support of proteins from all species and transcripts
+    support_all <- rowSums(annotations.5[, c("support_Assembled_transcripts", "support_A.lyrata.pep", "support_A.thaliana.pep", "support_B.rapa.pep")]) == 4
+    
+    # calculate data for histograms
+    # hist(annotations.5$prot_length[annotations.5$support_Assembled_transcripts == 1], breaks = 50)
+    # hist(annotations.5$prot_length[support_any == 1], breaks = 50)
+    
+    # all proteins
+    spec.hist <- hist(annotations.5$prot_length, breaks = seq(from = l.min, to = l.max, by = l.by), xlim = c(0, 3000), main = one.species)
+    # proteins with any support (either protein from at least one species or transcripts assembled from RNAseq)
+    spec.hist.1 <- hist(annotations.5$prot_length[support_any == 1], breaks = seq(from = l.min, to = l.max, by = l.by), xlim = c(0, 3000), main = one.species)
+    # proteins with support of proteins from all species and transcripts
+    spec.hist.2 <- hist(annotations.5$prot_length[support_all == 1], breaks = seq(from = l.min, to = l.max, by = l.by), xlim = c(0, 3000), main = one.species)
+    
+    # save to prepared dataframe
+    length.hist[, one.species] <- spec.hist$density
+    length.hist.1[, one.species] <- spec.hist.1$density
+    length.hist.2[, one.species] <- spec.hist.2$density
+    
+}
+
+## Plotting histograms
+pdf ("figs_and_stats/prot_length_histogram_supported_proteins.pdf", width=7, height=7, onefile = T)
+
+# plots input
+g.input <- c("length.hist", "length.hist.1", "length.hist.2")
+g.sub <- c("All genes", 
+                        "Genes supported by aligned protein from at least one species or by transcript",
+                        "Genes supported by aligned proteins from all three species and by transcript")
+# all species
+for(i in seq_along(g.input)) {
+    g.data <- get(g.input[i])
+    matplot(x = g.data$bins, y = g.data[, -1], type = "l", xlim = c(0, 2000), lty = 1, col = rainbow(ncol(g.data)-1), pch = 19, lwd = 2,
+                    main = "Protein length spectrum", ylab = "Frequency", xlab = "Protein length (amino acid residues)")
+    legend(x = "topright", legend = colnames(g.data[-1]), col = rainbow(ncol(g.data)-1), lty = 1, lwd = 2)
+    mtext(text = g.sub[i])
+}
+
+# Resource paper
+for(i in seq_along(g.input)) {
+    g.data <- get(g.input[i])[, c("bins", "Aethionema_saxatile", "Cardamine_glauca", "Erysimum_linariifolium", "Noccaea_praecox", "Odontarrhena_muralis")]
+    matplot(x = g.data$bins, y = g.data[, -1], type = "l", xlim = c(0, 2000), lty = 1, col = rainbow(ncol(g.data)-1), pch = 19,
+                main = "Protein length spectrum", ylab = "Frequency", xlab = "Protein length (amino acid residues)", lwd = 2)
+    legend(x = "topright", legend = colnames(g.data[-1]), col = rainbow(ncol(g.data)-1), lty = 1, lwd = 2)
+    mtext(text = g.sub[i])
+}
+dev.off()
+
+## Plot for publication
+# use palette from ColorBrewer
+require(RColorBrewer)
+display.brewer.all(n = 5, type = "qual", colorblindFriendly = T)
+
+# plots input
+g.input <- c("length.hist", "length.hist.1", "length.hist.2")
+g.sub <- c("All genes", 
+                        "Genes supported by aligned protein from at least one species or by transcript",
+                        "Genes supported by aligned proteins from all three species and by transcript")
+
+# Resource paper
+pdf ("figs_and_stats/prot_length_histogram_for_publication_supported_proteins.pdf", width=7, height=7, onefile = T)
+for(i in seq_along(g.input)) {
+    g.data <- get(g.input[i])[, c("bins", "Aethionema_saxatile", "Cardamine_glauca", "Erysimum_linariifolium", "Noccaea_praecox", "Odontarrhena_muralis")]
+    # Change to %
+    g.data[, -1] <- g.data[, -1] * 100
+    matplot(x = g.data$bins, y = g.data[, -1], type = "l", xlim = c(0, 2000), lty = 1, col = brewer.pal(n = ncol(g.data)-1, name = "Dark2"), pch = 19,
+                    main = "", ylab = "Frequency (%)", xlab = "Protein length (amino acid residues)", lwd = 2, ylim = c(0, 0.3))
+    g.legend <- gsub(pattern = "_", replacement = " ", x = colnames(g.data[-1]))
+    legend(x = "topright", legend = g.legend, col = brewer.pal(n = ncol(g.data)-1, name = "Dark2"), lwd = 2, lty = 1, text.font = 3)
+    mtext(text = g.sub[i], line = 2)
+}
+dev.off()
+
+pdf ("figs_and_stats/prot_length_histogram_for_publication_supported_proteins_2.pdf", width=10, height=5, onefile = T)
+par(mfrow = c(1, 2))
+for(i in 1:2) {
+    g.data <- get(g.input[i])[, c("bins", "Aethionema_saxatile", "Cardamine_glauca", "Erysimum_linariifolium", "Noccaea_praecox", "Odontarrhena_muralis")]
+    # Change to %
+    g.data[, -1] <- g.data[, -1] * 100
+    matplot(x = g.data$bins, y = g.data[, -1], type = "l", xlim = c(0, 2000), lty = 1, col = brewer.pal(n = ncol(g.data)-1, name = "Dark2"), pch = 19,
+                    main = "", ylab = "Frequency (%)", xlab = "Protein length (amino acid residues)", lwd = 2, ylim = c(0, 0.3), las = 1)
+    g.legend <- gsub(pattern = "_", replacement = " ", x = colnames(g.data[-1]))
+    legend(x = "topright", legend = g.legend, col = brewer.pal(n = ncol(g.data)-1, name = "Dark2"), lwd = 2, lty = 1, text.font = 3)
+    # mtext(text = g.sub[i], line = 2)
+    mtext(text = c("A", "B")[i], line = 2, adj = 0, font = 2, cex = 2)
+}
+par(old.par)
+dev.off()
+
+svg ("figs_and_stats/prot_length_histogram_for_publication_supported_proteins_3.svg", width=180/25.4, height=90/25.4, onefile = T)
+par(mfrow = c(1, 2), cex = 0.75)
+for(i in 1:2) {
+    g.data <- get(g.input[i])[, c("bins", "Aethionema_saxatile", "Cardamine_glauca", "Erysimum_linariifolium", "Noccaea_praecox", "Odontarrhena_muralis")]
+    # Change to %
+    g.data[, -1] <- g.data[, -1] * 100
+    matplot(x = g.data$bins, y = g.data[, -1], type = "l", xlim = c(0, 2000), lty = 1, col = brewer.pal(n = ncol(g.data)-1, name = "Dark2"), pch = 19,
+                    main = "", ylab = "Frequency (%)", xlab = "Protein length (amino acid residues)", lwd = 2, ylim = c(0, 0.3), las = 1)
+    g.legend <- gsub(pattern = "_", replacement = " ", x = colnames(g.data[-1]))
+    legend(x = "topright", legend = g.legend, col = brewer.pal(n = ncol(g.data)-1, name = "Dark2"), lwd = 2, lty = 1, text.font = 3)
+    # mtext(text = g.sub[i], line = 2)
+        # mtext(text = c("a", "b")[i], line = 2, adj = 0, font = 2, cex = 2)
+    mtext(text = c(expression(bold("a") * " All gene models"), expression(bold("b") * " Gene models with external evidence"))[i], line = 1.5, adj = 0, font = 1, cex = 1, outer = F)
+}
+par(old.par)
+dev.off()
+
+# just range of short proteins
+for(i in seq_along(g.input)) {
+    g.data <- get(g.input[i])[, c("bins", "Aethionema_saxatile", "Cardamine_glauca", "Erysimum_linariifolium", "Noccaea_praecox", "Odontarrhena_muralis")]
+    # Change to %
+    g.data[, -1] <- g.data[, -1] * 100
+    matplot(x = g.data$bins, y = g.data[, -1], type = "l", xlim = c(0, 500), lty = 1, col = brewer.pal(n = ncol(g.data)-1, name = "Dark2"), pch = 19,
+                    main = "", ylab = "Frequency (%)", xlab = "Protein length (amino acid residues)", lwd = 2, ylim = c(0, 0.3))
+    g.legend <- gsub(pattern = "_", replacement = " ", x = colnames(g.data[-1]))
+    legend(x = "topright", legend = g.legend, col = brewer.pal(n = ncol(g.data)-1, name = "Dark2"), lwd = 2, lty = 1, text.font = 3)
+    mtext(text = g.sub[i], line = 2)
+}
+```
+
+# Statistics of functional annotation
+
+## GO terms
+
+Counting GO terms per gene, plotting the histograms
+
+``` r
+setwd("D:/!ecolgen/Brassicaceae_orthology/brassicaceae_3/")
+if(!exists("old.par")) old.par<-par(no.readonly = T)
+
+# read the short version of annotation file
+ann.files <- list.files(path = "functional_annotation/1_only_At_orthologues_and_GO/", pattern = ".tsv")
+species <- sub(pattern = "_At_orthologues_and_GO.tsv", replacement = "", x = ann.files, fixed = T)
+
+# chosen species for testing of the loop
+one.species <- "Arabidopsis_arenosa"
+
+
+### Start of the  loop
+
+# prepare data frames
+go.hist <- data.frame(bins = 0:99)
+go.stat <- data.frame()
+
+for(one.species in species) {
+    short.ann <- read.table(file = paste0("functional_annotation/1_only_At_orthologues_and_GO/", one.species, "_At_orthologues_and_GO.tsv"), header = T, sep = "\t", na.strings = "",
+                                                    comment.char = "", quote = "")
+
+    # number of GO terms per gene
+    go.num <- sapply(X = short.ann$GO_term_IDs, FUN = function(x) {sum(unlist(gregexpr(pattern = "GO:", text = x)) > 0)}, USE.NAMES = F)
+    go.num[is.na(short.ann$GO_term_IDs)] <- 0
+    
+    # calculate data for histograms
+    spec.hist <- hist(go.num, breaks = seq(from = go.hist$bins[1]-0.5, to = go.hist$bins[nrow(go.hist)]+0.5), xlim = c(0, 30), main = one.species)
+    
+    # save to prepared dataframe
+    go.hist[, one.species] <- spec.hist$density
+
+    # save statistics to prepared dataframe
+    go.stat[1, "legend"] <- "Mean count of GO terms per gene"
+    go.stat[1, one.species] <- mean(go.num)
+    
+    go.stat[2, "legend"] <- "Median count of GO terms per gene"
+    go.stat[2, one.species] <- median(go.num)
+    
+    go.stat[3, "legend"] <- "Percentage of genes without GO term"
+    go.stat[3, one.species] <- 100*sum(is.na(short.ann$GO_term_IDs))/nrow(short.ann)
+    
+    go.stat[4, "legend"] <- "Genes with some GO term"
+    # go.stat[4, one.species] <- 100 -100*sum(is.na(short.ann$GO_term_IDs))/nrow(short.ann)
+    go.stat[4, one.species] <- paste0(formatC(x = sum(!is.na(short.ann$GO_term_IDs)), big.mark = " "), " (", round(sum(!is.na(short.ann$GO_term_IDs))/nrow(short.ann), 2)*100, "%)")
+    
+    print(paste(one.species, "done."))
+}
+## End of loop
+
+## export table with statistics
+dir.create(path = "figs_and_stats", recursive = T, showWarnings = F)
+write.table(x = go.stat, 
+                        file = "figs_and_stats/functional_annotation_stats.tsv",
+                        sep = "\t", row.names = F, na = "", quote = F)
+
+## export table with statistics for publication
+go.stat.pub <- go.stat[, c("legend", "Aethionema_saxatile", "Cardamine_glauca", "Erysimum_linariifolium", "Noccaea_praecox", "Odontarrhena_muralis")]
+# go.stat.pub[ ,-1] <- round(go.stat.pub[ ,-1], 1)
+write.table(x = go.stat.pub, 
+                        file = "figs_and_stats/functional_annotation_stats_for_pub.tsv",
+                        sep = "\t", row.names = F, na = "", quote = F)
+
+## Plotting histograms
+pdf ("figs_and_stats/n_GO_terms_histogram.pdf", width=7, height=7, onefile = T)
+
+# all species
+g.data <- go.hist
+matplot(x = g.data$bins, y = g.data[, -1], type = "l", xlim = c(0, 30), lty = 1, col = rainbow(ncol(g.data)-1),
+                main = "Number of GO terms per gene", ylab = "Frequency", xlab = "Number of GO terms per gene")
+legend(x = "topright", legend = colnames(g.data[-1]), col = rainbow(ncol(g.data)-1), lty = 1)
+
+# Focus species
+colnames(go.hist)
+g.data <- go.hist[, c("bins", "Aethionema_saxatile", "Alyssum_gmelinii", "Arabidopsis_arenosa", "Arabidopsis_lyrata_NCBI", "Arabidopsis_lyrata_Rawat", "Cardamine_amara", "Cardamine_glauca", "Erysimum_linariifolium", "Noccaea_praecox", "Odontarrhena_muralis")]
+matplot(x = g.data$bins, y = g.data[, -1], type = "l", xlim = c(0, 30), lty = 1, col = rainbow(ncol(g.data)-1),
+                main = "Number of GO terms per gene", ylab = "Frequency", xlab = "Number of GO terms per gene")
+legend(x = "topright", legend = colnames(g.data[-1]), col = rainbow(ncol(g.data)-1), lty = 1)
+
+# Our annotations
+g.data <- go.hist[, c("bins", "Aethionema_saxatile", "Alyssum_gmelinii", "Cardamine_glauca", "Erysimum_linariifolium", "Noccaea_praecox", "Odontarrhena_muralis")]
+matplot(x = g.data$bins, y = g.data[, -1], type = "l", xlim = c(0, 30), lty = 1, col = rainbow(ncol(g.data)-1),
+                main = "Number of GO terms per gene", ylab = "Frequency", xlab = "Number of GO terms per gene")
+legend(x = "topright", legend = colnames(g.data[-1]), col = rainbow(ncol(g.data)-1), lty = 1)
+
+# Resource paper
+g.data <- go.hist[, c("bins", "Aethionema_saxatile", "Cardamine_glauca", "Erysimum_linariifolium", "Noccaea_praecox", "Odontarrhena_muralis")]
+matplot(x = g.data$bins, y = g.data[, -1], type = "l", xlim = c(0, 30), lty = 1, lwd = 2, col = rainbow(ncol(g.data)-1),
+                main = "Number of GO terms per gene", ylab = "Frequency", xlab = "Number of GO terms per gene")
+legend(x = "topright", legend = colnames(g.data[-1]), col = rainbow(ncol(g.data)-1), lwd = 2, lty = 1)
+
+dev.off()
+```
+
+### Notes to the results
+
+As in other statistics, *Cochlearia* seems to have over-predicted genes.
+Almost 30 % of it’s genes doesn’t have any GO term annotation, which is
+much higher than in other species. Most of them are probably not real
+protein-coding genes.
+
+# Description of output tables
+
+There are several versions of tables (with different subsets of columns)
+in the [functional_annotation directory](functional_annotation/) and you
+can use the one which suits you:
+
+1.  [1_only_At_orthologues_and_GO](functional_annotation/1_only_At_orthologues_and_GO/)
+    - Only the main columns: `Species_name` (gene IDs of the given
+      species), `prot_length`, `Arabidopsis_thaliana`,
+      `single_Arabidopsis_thaliana`, `homologue_type`, `GO_term_IDs`,
+      `UniProt_Protein.names`
+    - Format: plain tsv
+2.  [2_full_without_InterProScan_pathways_tsv_gz](functional_annotation/2_full_without_InterProScan_pathways_tsv_gz/)
+    - All columns, just without `InterProScan_pathways`, which is very
+      big.
+    - Format: gzipped tsv
+3.  [3_InterProScan_pathways_tsv_gz](functional_annotation/3_InterProScan_pathways_tsv_gz/)
+    - Only `Species_name` (gene IDs of the given species) and
+      `InterProScan_pathways`
+    - Format: gzipped tsv
+4.  [4_full_rds](functional_annotation/4_full_rds/)
+    - All columns
+    - Format: rds (can be imported to R using function `readRDS()`)
+5.  [5_full_with_support_for_my_annotations_rds](functional_annotation/5_full_with_support_for_my_annotations_rds/)
+    - All columns plus gene model support columns (only for genomes
+      annotated by me)
+    - Format: rds (can be imported to R using function `readRDS()`)
+
+## Explanation of columns in the output tables
+
+Columns:
+
+- **Main columns**
+  - `Species_name` (e.g. `Arabidopsis_arenosa`): Gene IDs of the
+    investigated species.  
+  - `prot_length`: Length of protein sequence of the longest/primary
+    isoform used for OrthoFinder.  
+  - `Arabidopsis_thaliana`: Selected *A. thaliana* orthologues according
+    to these rules:  
+    1. Use orthologues from orthologues table.  
+    2. If missing, use Blast RBH.  
+    3. If missing, use genes from N0 hierarchical orthogroups.  
+    4. If missing, use genes from broad orthogroups.  
+    5. If missing, use genes hits from simple Blast (but only those with
+    BLAST_pident \> 40 & BLAST_qcovhsp \> 50)  
+    BLAST_pident: Percentage of identical matches (in local alignment)  
+    BLAST_qcovhsp: Query coverage per HSP (%)  
+    HSP = High-scoring Segment Pair (local alignment with no gaps)  
+  - `single_Arabidopsis_thaliana`: Selected *A. thaliana* orthologue
+    (only one) according to these rules:  
+    1. If there is only one *A. thaliana* gene in column
+    `Arabidopsis_thaliana`, use that one.  
+    2. Else, if there is one and only RBH and it is among genes in
+    column `Arabidopsis_thaliana`, take the RBH.  
+    3. Else, take the gene from the column `Arabidopsis_thaliana` that
+    had the highest bitscore in the simple BLAST results. If several
+    have the highest bitscore, take the first.  
+    4. If the genes in column `Arabidopsis_thaliana` are not among BLAST
+    hits, take nothing.  
+    `Recommendation`: It is appealing to use the “single” orthologues
+    (`single_Arabidopsis_thaliana`), because it makes things easier.
+    However, I recommend to do that only in cases when it is absolutely
+    necessary and otherwise use the column where there are multiple
+    orthologues in some cases (`Arabidopsis_thaliana`). The real
+    orthology is not always one-to-one due to multiplications of genes
+    in some species (there is a good explanation in [OrthoFinder
+    GitHub](https://github.com/davidemms/OrthoFinder)). The column
+    `Arabidopsis_thaliana` should better reflect the real biology.
+  - `homologue_type`: Type of selected *A. thaliana* orthologues in
+    `Arabidopsis_thaliana` column.  
+    - *orthologue* - orthologue from OrthoFinder orthologues table
+    (method 1)  
+    - *other* - homologue assigned by other method (2-5)  
+  - `GO_term_IDs`: Gene ontology term IDs compiled from columns
+    `TAIR_GO`, `UniProt_Gene.Ontology.IDs` and `InterProScan_GO_term`.  
+- **OrthoFinder\_\[…\]**: Results from OrthoFinder.
+  - `OrthoFinder_OL_Arabidopsis_thaliana` - *A. thaliana* orthologues
+    from OrthoFinder orthologues table.  
+  - `OrthoFinder_N0_HOG` - N0 orthogroup ID from OrthoFinder N0
+    hierarchical orthogroups table.  
+  - `OrthoFinder_N0_Arabidopsis_thaliana` - *A. thaliana*
+    orthologues/homologues from OrthoFinder N0 hierarchical orthogroups
+    table.  
+  - `OrthoFinder_OG_Orthogroup` - Orthogroup ID from OrthoFinder
+    orthogroups table.  
+  - `OrthoFinder_OG_Arabidopsis_thaliana` - *A. thaliana*
+    orthologues/homologues from OrthoFinder orthogroups table.  
+- **RBH\_\[…\]**: Results of Reciprocal best hit (RBH) BLAST.
+  - `RBH_B_id` - ID from species B (*A. thaliana*)  
+  - `RBH_A_length` - Length of protein sequence of the investigated (A)
+    species (unfortunately including `*` in the end)  
+  - `RBH_B_length` - Length of *A. thaliana* (species B) hit protein
+    sequence (unfortunately including `*` in the end)  
+  - `RBH_A_qcovhsp` - Percentage of sequence A covered by alignment
+    (investigated species)  
+  - `RBH_B_qcovhsp` - Percentage of sequence B covered by alignment (*A.
+    thaliana*)  
+  - `RBH_length` - HSP alignment length  
+  - `RBH_pident` - HSP percentage identity  
+  - `RBH_bitscore` - HSP bitscore  
+- **BLAST\_\[…\]**: Results for highest-scoring hit of simple BLAST
+  (investigated species against *A. thaliana* protein data
+  - `BLAST_qaccver` - Query (investigated species) accession and
+    version  
+  - `BLAST_saccver` - Subject (*A. thaliana*) accession and version  
+  - `BLAST_pident` - Percentage of identical matches  
+  - `BLAST_length` - Alignment length  
+  - `BLAST_mismatch` - Number of mismatches  
+  - `BLAST_gapopen` - Number of gap openings  
+  - `BLAST_qstart` - Start of alignment in query  
+  - `BLAST_qend` - End of alignment in query  
+  - `BLAST_sstart` - Start of alignment in subject (database hit)  
+  - `BLAST_send` - End of alignment in subject (database hit)  
+  - `BLAST_evalue` - Expectation value (E-value)  
+  - `BLAST_bitscore` - Bit score  
+  - `BLAST_qcovhsp` - Query coverage per HSP (alignment) \[%\]  
+  - `BLAST_qlen` - Query sequence length  
+  - `BLAST_slen` - Subject sequence length
+- **TAIR\_\[…\]**: Functional annotations obtained from TAIR
+  ([arabidopsis.org](https://www.arabidopsis.org/)) compiled for *A.
+  thaliana* homologues in `Arabidopsis_thaliana` column.
+  - `TAIR_symbol`  
+  - `TAIR_full_name`  
+  - `TAIR_subcellular.prediction`  
+  - `TAIR_gene_model_type`  
+  - `TAIR_short_description`  
+  - `TAIR_Curator_summary`  
+  - `TAIR_Computational_description`  
+  - `TAIR_GO`
+- **PlantCyc_pathway**: Metabolic pathways obtained from
+  [plantcyc.org](https://plantcyc.org/) compiled for *A. thaliana*
+  homologues in `Arabidopsis_thaliana` column.
+  - `PlantCyc_pathway`  
+- **TAIR\_\[…\]**: Annotations obtained from
+  [UniProt](https://www.uniprot.org/uniprot/?query=proteome%3Aup000006548)
+  compiled for *A. thaliana* homologues in `Arabidopsis_thaliana`
+  column.
+  - `UniProt_Entry`  
+  - `UniProt_Entry.Name`  
+  - `UniProt_Protein.names`  
+  - `UniProt_Gene.Names`  
+  - `UniProt_Length`  
+  - `UniProt_Gene.Names..ordered.locus.`  
+  - `UniProt_Gene.Names..primary.`  
+  - `UniProt_Gene.Names..synonym.`  
+  - `UniProt_Pathway`  
+  - `UniProt_Cofactor`  
+  - `UniProt_DNA.binding`  
+  - `UniProt_Binding.site`  
+  - `UniProt_Active.site`  
+  - `UniProt_Protein.existence`  
+  - `UniProt_Keywords`  
+  - `UniProt_Interacts.with`  
+  - `UniProt_Developmental.stage`  
+  - `UniProt_Induction`  
+  - `UniProt_Tissue.specificity`  
+  - `UniProt_Gene.Ontology..biological.process.`  
+  - `UniProt_Gene.Ontology..GO.`  
+  - `UniProt_Gene.Ontology.IDs`  
+  - `UniProt_Gene.Ontology..molecular.function.`  
+  - `UniProt_Gene.Ontology..cellular.component.`  
+  - `UniProt_Intramembrane`  
+  - `UniProt_Subcellular.location..CC.`  
+  - `UniProt_Topological.domain`  
+  - `UniProt_Transmembrane`  
+  - `UniProt_PROSITE`  
+  - `UniProt_Pfam`  
+  - `UniProt_InterPro`  
+  - `UniProt_Subunit.structure`  
+  - `UniProt_thalemine.link`  
+  - `UniProt_tair.link`  
+- **InterProScan\_\[…\]**: Results of InterProScan for protein sequences
+  of the given species (NOT *A. thaliana* homologues).
+  - `InterProScan_AntiFam`  
+  - `InterProScan_CDD`  
+  - `InterProScan_Coils`  
+  - `InterProScan_FunFam`  
+  - `InterProScan_Gene3D`  
+  - `InterProScan_Hamap`  
+  - `InterProScan_MobiDBLite`  
+  - `InterProScan_NCBIfam`  
+  - `InterProScan_PANTHER`  
+  - `InterProScan_PIRSF`  
+  - `InterProScan_PRINTS`  
+  - `InterProScan_Pfam`  
+  - `InterProScan_ProSitePatterns`  
+  - `InterProScan_ProSiteProfiles`  
+  - `InterProScan_SFLD`  
+  - `InterProScan_SMART`  
+  - `InterProScan_SUPERFAMILY`  
+  - `InterProScan_interpro`  
+  - `InterProScan_GO_term`  
+  - `InterProScan_pathways`
+
+Extra columns only for genome annotations made by me:
+
+- **support\_\[…\]**: Evidence for gene models obtained during genome
+  annotation (1/0)
+  - `support_Assembled_transcripts` - Overlap with transcripts assembled
+    from RNA-seq used for annotation by StringTie (at least 90 % of gene
+    model)  
+  - `support_A.lyrata.pep` - Overlap with *Arabidopsis lyrata* proteins
+    aligned to genome using Miniprot (the overlap should be at least 90%
+    of both the gene model and the aligned protein)  
+  - `support_A.thaliana.` - Overlap with *Arabidopsis thaliana* proteins
+    aligned to genome using Miniprot (the overlap should be at least 90%
+    of both the gene model and the aligned protein)  
+  - `support_B.rapa.pep` - Overlap with *Brassica rapa* proteins aligned
+    to genome using Miniprot (the overlap should be at least 90% of both
+    the gene model and the aligned protein)

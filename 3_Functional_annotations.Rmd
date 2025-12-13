@@ -1,14 +1,84 @@
 ---
 title: "Functional annotations"
-author: "Milos Duchoslav"
-date: "2025-11-10"
-output: html_document
+author: "Miloš Duchoslav"
+date: "2025-11"
+output:
+  github_document:
+    toc: true
+    toc_depth: 2
 editor_options: 
   chunk_output_type: console
 ---
 
+```{r setup, include=FALSE}
+# Setting NO evaluation of code chunks as default (needed for knitting of bash code without trying to run that)
+knitr::opts_chunk$set(eval = FALSE)
+```
 
-# InterProScan - direct annotation of the genes of desired species (not A. thaliana orthologues)
+# Introduction
+
+This RMarkdown file (or its markdown version for GitHub) documents compiling functional annotation from several sources.
+
+This file includes:
+
+1. BASH code that I ran at MetaCentrum (Czech national grid infrastructure) running PBS scheduling system for batch jobs.
+2. R code that I ran locally.
+
+### SW installation and versions
+
+The SW installation instructions and versions of SW used is described in [Installation_of_SW.md](Installation_of_SW.md).
+
+# Strategy
+
+Sources of functional annotation:
+
+1. TAIR ([arabidopsis.org](https://www.arabidopsis.org/)) functional annotations for *A. thaliana* homologues
+2. [plantcyc.org](https://plantcyc.org/) functional annotations for *A. thaliana* homologues
+3. [UniProt](https://www.uniprot.org/uniprot/?query=proteome%3Aup000006548) functional annotations for *A. thaliana* homologues
+4. [InterProScan](https://interproscan-docs.readthedocs.io) results for protein sequences of the given species
+
+In case of several *A. thaliana* homologues assigned to one gene, annotation of all of them was compiled together.
+
+## Detailed sources of *A. thaliana* annotations
+
+Extracted from script [functional_annotation_compilation_executable.r](functional_annotation_compilation_executable.r).
+
+```
+## Gene aliases
+# File "gene_aliases_20241001.txt.gz"
+# Downloaded on 2024-12-09 from
+# https://v2.arabidopsis.org/download_files/Subscriber_Data_Releases/TAIR_Data_20240930/gene_aliases_20241001.txt.gz
+# (web page https://v2.arabidopsis.org/download/index-auto.jsp?dir=%2Fdownload_files%2FSubscriber_Data_Releases%2FTAIR_Data_20240930)
+
+## Subcellular predictions
+# File "Araport11-Subcellular_Predictions_version_2024_03_09.txt"
+# Downloaded on 2024-12-09 from https://www.arabidopsis.org/download/list?dir=Genes%2FAraport11_genome_release
+
+## Functional descriptions from arabidopsis.org
+# File "Araport11_functional_descriptions_20241001.txt.gz"
+# Downloaded on 2024-12-09 from
+# https://v2.arabidopsis.org/download_files/Subscriber_Data_Releases/TAIR_Data_20240930/Araport11_functional_descriptions_20241001.txt.gz 
+# (web page https://v2.arabidopsis.org/download/index-auto.jsp?dir=%2Fdownload_files%2FSubscriber_Data_Releases%2FTAIR_Data_20240930)
+
+## GO annotations from arabidopsis.org
+# Downloaded on 2025-11-11 from
+# https://www.arabidopsis.org/download/file?path=Public_Data_Releases/TAIR_Data_20240930/ATH_GO_GOSLIM.txt.gz 
+# (web page https://www.arabidopsis.org/download/list?dir=Public_Data_Releases%2FTAIR_Data_20240930)
+
+## Metabolic pathways
+# File "aracyc_pathways.20230103"
+# Downloaded on 2024-12-09 from
+# https://plantcyc-ftp.storage.googleapis.com/pmn/Pathways/Data_dumps/PMN15.5_January2023/pathways/aracyc_pathways.20230103
+# (web page https://plantcyc.org/)
+
+## Annotations from Uniprot
+# File "uniprotkb_proteome_up000006548_2025_11_11.tsv.gz"
+# Downloaded on 2025-11-11 from https://www.uniprot.org/uniprot/?query=proteome%3Aup000006548.
+# I selected the desired columns for view and then downloaded that as a table.
+```
+
+
+# InterProScan - direct annotation of the genes of desired species (not *A. thaliana* orthologues)
 
 Inspiration from:
 
@@ -208,12 +278,15 @@ The TSV format presents the match data in columns as follows:
                         PIRSF (X.XX) : The PIRSF concept is used as a guiding principle to provide comprehensive and non-overlapping clustering of UniProtKB sequences into a hierarchical order to reflect their evolutionary relationships.
   
 
-# Functional annotations of Arabidopsis thaliana orthologs
+# Functional annotations of *Arabidopsis thaliana* orthologs
 
 
 ## Compilation of annotations from several sources
 
-List of species
+The compilation is done by executable R script [functional_annotation_compilation_executable.r](functional_annotation_compilation_executable.r). The script is not optimised for speed, the computation can take up to 2 h per species. Extraction of the commands to the executable script allowed me to run it distantly in parallel jobs.
+
+### List of species
+
 ```{r}
 setwd("D:/!ecolgen/Brassicaceae_orthology/brassicaceae_3/")
 old.par<-par(no.readonly = T)
@@ -225,6 +298,7 @@ species
 ```
 
 ### Testing of script
+
 ```{sh}
 cd /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3
 
@@ -235,6 +309,7 @@ Rscript --verbose "functional_annotation_compilation_executable.r" Aethionema_sa
 ```
 
 ### Bash script for running of R script (compilation of functional annotations)
+
 ```{sh}
 ### Metacentrum script
 
@@ -274,6 +349,7 @@ clean_scratch
 ```
 
 ### Loop for submitting jobs for several species
+
 ```{sh}
 cd /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/metacentrum_scripts
 
@@ -287,6 +363,7 @@ done
 
 
 ```
+
 
 # Adding reliability table for species annotated by me
 
@@ -577,8 +654,160 @@ legend(x = "topright", legend = colnames(g.data[-1]), col = rainbow(ncol(g.data)
 dev.off()
 ```
 
-### Results
+### Notes to the results
 
 As in other statistics, *Cochlearia* seems to have over-predicted genes. Almost 30 % of it's genes doesn't have any GO term annotation, which is much higher than in other species. Most of them are probably not real protein-coding genes.
 
 
+# Description of output tables
+
+There are several versions of tables (with different subsets of columns) in the [functional_annotation directory](functional_annotation/) and you can use the one which suits you:
+
+1. [1_only_At_orthologues_and_GO](functional_annotation/1_only_At_orthologues_and_GO/)
+	- Only the main columns: `Species_name` (gene IDs of the given species), `prot_length`, `Arabidopsis_thaliana`, `single_Arabidopsis_thaliana`, `homologue_type`, `GO_term_IDs`, `UniProt_Protein.names`
+	- Format: plain tsv
+2. [2_full_without_InterProScan_pathways_tsv_gz](functional_annotation/2_full_without_InterProScan_pathways_tsv_gz/)
+	- All columns, just without `InterProScan_pathways`, which is very big.
+	- Format: gzipped tsv
+3. [3_InterProScan_pathways_tsv_gz](functional_annotation/3_InterProScan_pathways_tsv_gz/)
+	- Only `Species_name` (gene IDs of the given species) and `InterProScan_pathways`
+	- Format: gzipped tsv
+4. [4_full_rds](functional_annotation/4_full_rds/)
+	- All columns
+	- Format: rds (can be imported to R using function `readRDS()`)
+5. [5_full_with_support_for_my_annotations_rds](functional_annotation/5_full_with_support_for_my_annotations_rds/)
+	- All columns plus gene model support columns (only for genomes annotated by me)
+	- Format: rds (can be imported to R using function `readRDS()`)
+	
+## Explanation of columns in the output tables
+
+Columns:
+
+- **Main columns**  
+	- `Species_name` (e.g. `Arabidopsis_arenosa`): Gene IDs of the investigated species.  
+	- `prot_length`: Length of protein sequence of the longest/primary isoform used for OrthoFinder.  
+	- `Arabidopsis_thaliana`: Selected *A. thaliana* orthologues according to these rules:  
+				1. Use orthologues from orthologues table.  
+				2. If missing, use Blast RBH.  
+				3. If missing, use genes from N0 hierarchical orthogroups.  
+				4. If missing, use genes from broad orthogroups.  
+				5. If missing, use genes hits from simple Blast (but only those with BLAST_pident > 40 & BLAST_qcovhsp > 50)  
+						BLAST_pident: Percentage of identical matches (in local alignment)  
+						BLAST_qcovhsp: Query coverage per HSP (%)  
+								HSP = High-scoring Segment Pair (local alignment with no gaps)  
+	- `single_Arabidopsis_thaliana`: Selected *A. thaliana* orthologue (only one) according to these rules:  
+				1. If there is only one *A. thaliana* gene in column `Arabidopsis_thaliana`, use that one.  
+				2. Else, if there is one and only RBH and it is among genes in column `Arabidopsis_thaliana`, take the RBH.  
+				3. Else, take the gene from the column `Arabidopsis_thaliana` that had the highest bitscore in the simple BLAST results. If several have the highest bitscore, take the first.  
+				4. If the genes in column `Arabidopsis_thaliana` are not among BLAST hits, take nothing.  
+					`Recommendation`: It is appealing to use the "single" orthologues (`single_Arabidopsis_thaliana`), because it makes things easier. However, I recommend to do that only in cases when it is absolutely necessary and otherwise use the column where there are multiple orthologues in some cases (`Arabidopsis_thaliana`). The real orthology is not always one-to-one due to multiplications of genes in some species (there is a good explanation in [OrthoFinder GitHub](https://github.com/davidemms/OrthoFinder)). The column `Arabidopsis_thaliana` should better reflect the real biology.
+	- `homologue_type`: Type of selected *A. thaliana* orthologues in `Arabidopsis_thaliana` column.  
+			- *orthologue* - orthologue from OrthoFinder orthologues table (method 1)  
+			- *other* - homologue assigned by other method (2-5)  
+	- `GO_term_IDs`: Gene ontology term IDs compiled from columns `TAIR_GO`, `UniProt_Gene.Ontology.IDs` and `InterProScan_GO_term`.  
+- **OrthoFinder_[...]**: Results from OrthoFinder.  
+	- `OrthoFinder_OL_Arabidopsis_thaliana` - *A. thaliana* orthologues from OrthoFinder orthologues table.  
+	- `OrthoFinder_N0_HOG` - N0 orthogroup ID from OrthoFinder N0 hierarchical orthogroups table.  
+	- `OrthoFinder_N0_Arabidopsis_thaliana` - *A. thaliana* orthologues/homologues from OrthoFinder N0 hierarchical orthogroups table.  
+	- `OrthoFinder_OG_Orthogroup` - Orthogroup ID from OrthoFinder orthogroups table.  
+	- `OrthoFinder_OG_Arabidopsis_thaliana` - *A. thaliana* orthologues/homologues from OrthoFinder orthogroups table.  
+- **RBH_[...]**: Results of Reciprocal best hit (RBH) BLAST.    
+	- `RBH_B_id` - ID from species B (*A. thaliana*)  
+	- `RBH_A_length` - Length of protein sequence of the investigated (A) species (unfortunately including `*` in the end)  
+	- `RBH_B_length` - Length of *A. thaliana* (species B) hit protein sequence (unfortunately including `*` in the end)  
+	- `RBH_A_qcovhsp` - Percentage of sequence A covered by alignment (investigated species)  
+	- `RBH_B_qcovhsp` - Percentage of sequence B covered by alignment (*A. thaliana*)  
+	- `RBH_length` - HSP alignment length  
+	- `RBH_pident` - HSP percentage identity  
+	- `RBH_bitscore` - HSP bitscore  
+- **BLAST_[...]**: Results for highest-scoring hit of simple BLAST (investigated species against *A. thaliana* protein data  
+	- `BLAST_qaccver` - Query (investigated species) accession and version  
+	- `BLAST_saccver` - Subject (*A. thaliana*) accession and version  
+	- `BLAST_pident` - Percentage of identical matches  
+	- `BLAST_length` - Alignment length  
+	- `BLAST_mismatch` - Number of mismatches  
+	- `BLAST_gapopen` - Number of gap openings  
+	- `BLAST_qstart` - Start of alignment in query  
+	- `BLAST_qend` - End of alignment in query  
+	- `BLAST_sstart` - Start of alignment in subject (database hit)  
+	- `BLAST_send` - End of alignment in subject (database hit)  
+	- `BLAST_evalue` - Expectation value (E-value)  
+	- `BLAST_bitscore` - Bit score  
+	- `BLAST_qcovhsp` - Query coverage per HSP (alignment) [%]  
+	- `BLAST_qlen` - Query sequence length  
+	- `BLAST_slen` - Subject sequence length
+- **TAIR_[...]**: Functional annotations obtained from TAIR ([arabidopsis.org](https://www.arabidopsis.org/)) compiled for *A. thaliana* homologues in `Arabidopsis_thaliana` column.
+	- `TAIR_symbol`  
+	- `TAIR_full_name`  
+	- `TAIR_subcellular.prediction`  
+	- `TAIR_gene_model_type`  
+	- `TAIR_short_description`  
+	- `TAIR_Curator_summary`  
+	- `TAIR_Computational_description`  
+	- `TAIR_GO`
+- **PlantCyc_pathway**: Metabolic pathways obtained from [plantcyc.org](https://plantcyc.org/) compiled for *A. thaliana* homologues in `Arabidopsis_thaliana` column.
+	- `PlantCyc_pathway`  
+- **TAIR_[...]**: Annotations obtained from [UniProt](https://www.uniprot.org/uniprot/?query=proteome%3Aup000006548) compiled for *A. thaliana* homologues in `Arabidopsis_thaliana` column.
+	- `UniProt_Entry`  
+	- `UniProt_Entry.Name`  
+	- `UniProt_Protein.names`  
+	- `UniProt_Gene.Names`  
+	- `UniProt_Length`  
+	- `UniProt_Gene.Names..ordered.locus.`  
+	- `UniProt_Gene.Names..primary.`  
+	- `UniProt_Gene.Names..synonym.`  
+	- `UniProt_Pathway`  
+	- `UniProt_Cofactor`  
+	- `UniProt_DNA.binding`  
+	- `UniProt_Binding.site`  
+	- `UniProt_Active.site`  
+	- `UniProt_Protein.existence`  
+	- `UniProt_Keywords`  
+	- `UniProt_Interacts.with`  
+	- `UniProt_Developmental.stage`  
+	- `UniProt_Induction`  
+	- `UniProt_Tissue.specificity`  
+	- `UniProt_Gene.Ontology..biological.process.`  
+	- `UniProt_Gene.Ontology..GO.`  
+	- `UniProt_Gene.Ontology.IDs`  
+	- `UniProt_Gene.Ontology..molecular.function.`  
+	- `UniProt_Gene.Ontology..cellular.component.`  
+	- `UniProt_Intramembrane`  
+	- `UniProt_Subcellular.location..CC.`  
+	- `UniProt_Topological.domain`  
+	- `UniProt_Transmembrane`  
+	- `UniProt_PROSITE`  
+	- `UniProt_Pfam`  
+	- `UniProt_InterPro`  
+	- `UniProt_Subunit.structure`  
+	- `UniProt_thalemine.link`  
+	- `UniProt_tair.link`  
+- **InterProScan_[...]**: Results of InterProScan for protein sequences of the given species (NOT *A. thaliana* homologues).
+	- `InterProScan_AntiFam`  
+	- `InterProScan_CDD`  
+	- `InterProScan_Coils`  
+	- `InterProScan_FunFam`  
+	- `InterProScan_Gene3D`  
+	- `InterProScan_Hamap`  
+	- `InterProScan_MobiDBLite`  
+	- `InterProScan_NCBIfam`  
+	- `InterProScan_PANTHER`  
+	- `InterProScan_PIRSF`  
+	- `InterProScan_PRINTS`  
+	- `InterProScan_Pfam`  
+	- `InterProScan_ProSitePatterns`  
+	- `InterProScan_ProSiteProfiles`  
+	- `InterProScan_SFLD`  
+	- `InterProScan_SMART`  
+	- `InterProScan_SUPERFAMILY`  
+	- `InterProScan_interpro`  
+	- `InterProScan_GO_term`  
+	- `InterProScan_pathways`
+
+Extra columns only for genome annotations made by me:
+
+- **support_[...]**: Evidence for gene models obtained during genome annotation (1/0)
+	- `support_Assembled_transcripts` - Overlap with transcripts assembled from RNA-seq used for annotation by StringTie (at least 90 % of gene model)  
+	- `support_A.lyrata.pep` - Overlap with *Arabidopsis lyrata* proteins aligned to genome using Miniprot (the overlap should be at least 90% of both the gene model and the aligned protein)  
+	- `support_A.thaliana.` - Overlap with *Arabidopsis thaliana* proteins aligned to genome using Miniprot (the overlap should be at least 90% of both the gene model and the aligned protein)  
+	- `support_B.rapa.pep` - Overlap with *Brassica rapa* proteins aligned to genome using Miniprot (the overlap should be at least 90% of both the gene model and the aligned protein)  

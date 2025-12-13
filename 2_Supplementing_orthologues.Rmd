@@ -766,7 +766,7 @@ write.table(x = stats.ortho, file = "figs_and_stats/supplementing_orthologues_st
 
 ```
 
-# Explanation of columns in output table
+# Explanation of columns in the output table
 
 Name of output tables (in [supplemented_orthologues](supplemented_orthologues/) directory): `Species_name__v__Arabidopsis_thaliana_supplemented.tsv`
 
