@@ -3,7 +3,7 @@ Orthology and functional annotation of some Brassicaceae genomes
 Miloš Duchoslav
 2025
 
-- [Introduction](#Introduction]
+- [Introduction](#Introduction)
 - [Version history](#Version-history)
 - [Species included in this version](#Species-included-in-this-version)
 - [Scripts and detailed description of methods](#Scripts-and-detailed-description-of-methods)
