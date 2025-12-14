@@ -105,6 +105,8 @@ Version 3.0 (2025-10)
 
 ## Scripts and detailed description of methods
 
+I use for documentation RMarkdown combining snippets of R code and Bash code. These Rmd files are then knitted to GitHub markdown files for better viewing.
+
 0. SW installation (and description of versions used)
 	- [GitHub md file](0_Installation_of_SW.md) | [original RMarkdown file](0_Installation_of_SW.Rmd)
 1. Data preparation and [OrthoFinder](https://github.com/davidemms/OrthoFinder) run

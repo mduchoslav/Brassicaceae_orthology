@@ -2,3 +2,5 @@ figs_and_stats/functional_annotation_stats_for_pub_mod.xlsx
 figs_and_stats/~$functional_annotation_stats_for_pub_mod.xlsx
 functional_annotation/logs/
 interproscan/
+blast_results/
+.Rhistory
