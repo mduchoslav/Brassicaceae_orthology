@@ -3,3 +3,4 @@ functional_annotation/4_full_rds/ filter=lfs diff=lfs merge=lfs -text
 functional_annotation/5_full_with_support_for_my_annotations_rds/ filter=lfs diff=lfs merge=lfs -text
 functional_annotation/2_full_without_InterProScan_pathways_tsv_gz/ filter=lfs diff=lfs merge=lfs -text
 functional_annotation/3_InterProScan_pathways_tsv_gz/ filter=lfs diff=lfs merge=lfs -text
+*.gz filter=lfs diff=lfs merge=lfs -text
