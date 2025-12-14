@@ -3,6 +3,17 @@ Orthology and functional annotation of some Brassicaceae genomes
 Miloš Duchoslav
 2025
 
+- [Introduction](#Introduction]
+- [Version history](#Version-history)
+- [Species included in this version](#Species-included-in-this-version)
+- [Scripts and detailed description of methods](#Scripts-and-detailed-description-of-methods)
+- [Intermediate results](#Intermediate-results)
+- [Final results](#Final-results)
+
+## Introduction
+
+The purpose of this project is to obtain gene orthology relationships between several Brassicaceae species and good functional annotation of their genes. It will be used as a resource in other projects of our team ([Plant ecological genomics group of Filip Kolář](https://www.plantecologicalgenomics.cz/), Charles University, Prague, Czech Republic), but it could be useful also for others. I focus on species that we use in our projects, but I added also some other genomes with reasonably good assembly and annotation quality to improve orthology inference.
+
 ## Version history
 
 Version 3.0 (2025-10)
@@ -25,7 +36,7 @@ Version 3.0 (2025-10)
 	- *Cardamine glauca*  
 	- *Noccaea praecox*
 
-## Species included in this Orthofinder run
+## Species included in this version
 
 1. *Aethionema saxatile*
 	- Nezamivand-Chegini Mahnaz, Duchoslav Miloš, ..., Kolar Filip 2025 (to be published)
@@ -153,4 +164,4 @@ There are several versions of tables (with different subsets of columns) in the 
 	- All columns plus gene model support columns (only for genomes annotated by me)
 	- Format: rds (can be imported to R using function `readRDS()`)
 	
-The detailed description of the columns is in [3_Functional_annotations](3_Functional_annotations.md#explanation-of-columns-in-the-output-tables)
+The detailed description of the columns is in [3_Functional_annotations](3_Functional_annotations.md#explanation-of-columns-in-the-output-tables).
