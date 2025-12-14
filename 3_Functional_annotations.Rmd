@@ -667,7 +667,7 @@ There are several versions of tables (with different subsets of columns) in the 
 	- Only the main columns: `Species_name` (gene IDs of the given species), `prot_length`, `Arabidopsis_thaliana`, `single_Arabidopsis_thaliana`, `homologue_type`, `GO_term_IDs`, `UniProt_Protein.names`
 	- Format: plain tsv
 2. [2_full_without_InterProScan_pathways_tsv_gz](functional_annotation/2_full_without_InterProScan_pathways_tsv_gz/)
-	- All columns, just without `InterProScan_pathways`, which is very big.
+	- All columns, just without `InterProScan_pathways` column, which contains a lot of data, making files too big.
 	- Format: gzipped tsv
 3. [3_InterProScan_pathways_tsv_gz](functional_annotation/3_InterProScan_pathways_tsv_gz/)
 	- Only `Species_name` (gene IDs of the given species) and `InterProScan_pathways`

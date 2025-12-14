@@ -1,9 +1,3 @@
-Version 3 is under development.
-
-Version 2: <https://github.com/mduchoslav/Brassicaceae_orthology/tree/2.0>
-
-
-
 Orthology and functional annotation of some Brassicaceae genomes
 ================
 Miloš Duchoslav
@@ -118,9 +112,45 @@ I use for documentation RMarkdown combining snippets of R code and Bash code. Th
 4. Statistics and plots (partially also in previous scripts)
 	- [GitHub md file](4_Stats_and_plots.md) | [original RMarkdown file](4_Stats_and_plots.Rmd)
 	
-## Results
+## Intermediate results
 
-1. [OrthoFinder results](orthofinder_results/Results_brassicaceae_3/) - main files from OrthoFinder output.
-2. 
-3.
-4. [Tables with *A. thaliana* orthologues and functional annotation](functional_annotation)
+1. [Protein sequences of primary transcript](primary_transcripts/) - sequences of longest isoforms as input to OrthoFinder.
+2. [OrthoFinder results](orthofinder_results/Results_brassicaceae_3/) - main files from OrthoFinder output.
+3. [Length of protein sequences](protein_length_primary_transcripts/) - length of primary transcripts (in amino acid residues).
+	- The same information is also in the final results.
+4. [Supplemented orthologues](supplemented_orthologues/) - Orthologues between each species and *A. thaliana* from OrthoFinder supplemented with homologues using other methods.
+	- Description of columns in the output tables is in [2_Supplementing_orthologues](2_Supplementing_orthologues.md#explanation-of-columns-in-output-table).
+	- The same information is also in the final results.
+	
+Other intermediate results are not included as they are either not useful or they are too big (like the BLAST results or InterProScan results).
+
+## Final results
+
+The main results are tables (for each species except *A. thaliana*) with information for each gene including
+
+- Protein lenght
+- *A. thaliana* orthologues/homologues and details for their inference
+- Gene ontology (GO) terms
+- Other functional annotation from several sources
+
+In case of several *A. thaliana* homologues assigned to one gene, annotation of all of them was compiled together.
+
+There are several versions of tables (with different subsets of columns) in the [functional_annotation directory](functional_annotation/) and you can use the one which suits you:
+
+1. [1_only_At_orthologues_and_GO](functional_annotation/1_only_At_orthologues_and_GO/)
+	- Only the main columns: `Species_name` (gene IDs of the given species), `prot_length`, `Arabidopsis_thaliana`, `single_Arabidopsis_thaliana`, `homologue_type`, `GO_term_IDs` and `UniProt_Protein.names`
+	- Format: plain tsv
+2. [2_full_without_InterProScan_pathways_tsv_gz](functional_annotation/2_full_without_InterProScan_pathways_tsv_gz/)
+	- All columns, just without `InterProScan_pathways` column, which contains a lot of data, making files too big.
+	- Format: gzipped tsv
+3. [3_InterProScan_pathways_tsv_gz](functional_annotation/3_InterProScan_pathways_tsv_gz/)
+	- Only `Species_name` (gene IDs of the given species) and `InterProScan_pathways`
+	- Format: gzipped tsv
+4. [4_full_rds](functional_annotation/4_full_rds/)
+	- All columns
+	- Format: rds (can be imported to R using function `readRDS()`)
+5. [5_full_with_support_for_my_annotations_rds](functional_annotation/5_full_with_support_for_my_annotations_rds/)
+	- All columns plus gene model support columns (only for genomes annotated by me)
+	- Format: rds (can be imported to R using function `readRDS()`)
+	
+The detailed description of the columns is in [3_Functional_annotations](3_Functional_annotations.md#explanation-of-columns-in-the-output-tables)
