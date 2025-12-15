@@ -17,8 +17,8 @@ Miloš Duchoslav
   - [Load functions etc.](#load-functions-etc)
   - [Reading common files](#reading-common-files)
   - [Big loop](#big-loop)
-- [Explanation of columns in output
-  table](#explanation-of-columns-in-output-table)
+- [Explanation of columns in the output
+  table](#explanation-of-columns-in-the-output-table)
 - [Improving table with stats](#improving-table-with-stats)
 - [End](#end)
 
@@ -464,7 +464,8 @@ o.groups_b <- read.table(file = "orthofinder_results/Results_brassicaceae_3/Orth
 ## Big loop
 
 This loop cycles through species where the orthologues from Orthofinder
-should be supplemented.
+should be supplemented. Besides supplementing orthologues it collects
+statistics.
 
 ``` r
 # read species names
@@ -800,7 +801,7 @@ dir.create(path = "figs_and_stats", recursive = T, showWarnings = F)
 write.table(x = stats.ortho, file = "figs_and_stats/supplementing_orthologues_stats.tsv", sep = "\t", row.names = F)
 ```
 
-# Explanation of columns in output table
+# Explanation of columns in the output table
 
 Name of output tables (in
 [supplemented_orthologues](supplemented_orthologues/) directory):

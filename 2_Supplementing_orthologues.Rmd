@@ -429,7 +429,7 @@ o.groups_b <- read.table(file = "orthofinder_results/Results_brassicaceae_3/Orth
 
 ## Big loop
 
-This loop cycles through species where the orthologues from Orthofinder should be supplemented.
+This loop cycles through species where the orthologues from Orthofinder should be supplemented. Besides supplementing orthologues it collects statistics.
 
 ```{r}
 # read species names

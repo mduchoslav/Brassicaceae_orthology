@@ -7,6 +7,7 @@ Miloš Duchoslav
 - [R](#r)
 - [BLAST](#blast)
 - [Reciprocal best hit (RBH) BLAST](#reciprocal-best-hit-rbh-blast)
+- [Interproscan](#interproscan)
 
 ## OrthoFinder
 
@@ -53,4 +54,43 @@ wget https://raw.githubusercontent.com/peterjc/galaxy_blast/refs/heads/master/to
 
 # help
 python3 blast_rbh.py -h
+```
+
+## Interproscan
+
+<https://interproscan-docs.readthedocs.io/en/v5/HowToDownload.html>
+
+``` sh
+cd /storage/brno12-cerit/home/duchmil/SW/InterProScan/
+
+wget https://ftp.ebi.ac.uk/pub/software/unix/iprscan/5/5.76-107.0/interproscan-5.76-107.0-64-bit.tar.gz
+wget https://ftp.ebi.ac.uk/pub/software/unix/iprscan/5/5.76-107.0/interproscan-5.76-107.0-64-bit.tar.gz.md5
+
+# Recommended checksum to confirm the download was successful:
+md5sum -c interproscan-5.76-107.0-64-bit.tar.gz.md5
+# Must return *interproscan-5.76-107.0-64-bit.tar.gz: OK*
+# If not - try downloading the file again as it may be a corrupted copy.
+
+tar -pxvzf interproscan-5.76-107.0-64-bit.tar.gz
+# where:
+#     p = preserve the file permissions
+#     x = extract files from an archive
+#     v = verbosely list the files processed
+#     z = filter the archive through gzip
+#     f = use archive file
+
+cd interproscan-5.76-107.0/
+
+#Index hmm models
+python3 setup.py -f interproscan.properties
+
+# check
+module load openjdk
+module list
+# openjdk/17.0.0_35-intel-19.0.4-udmzouu
+./interproscan.sh
+
+# tests
+./interproscan.sh -i test_all_appl.fasta -f tsv -dp
+./interproscan.sh -i test_all_appl.fasta -f tsv
 ```

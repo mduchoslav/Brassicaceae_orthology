@@ -19,9 +19,6 @@ Miloš Duchoslav
     sources](#compilation-of-annotations-from-several-sources)
 - [Adding reliability table for species annotated by
   me](#adding-reliability-table-for-species-annotated-by-me)
-- [Statistics of functional
-  annotation](#statistics-of-functional-annotation)
-  - [GO terms](#go-terms)
 - [Description of output tables](#description-of-output-tables)
   - [Explanation of columns in the output
     tables](#explanation-of-columns-in-the-output-tables)
@@ -307,6 +304,8 @@ The script is not optimised for speed, the computation can take up to 2
 h per species. Extraction of the commands to the executable script
 allowed me to run it distantly in parallel jobs.
 
+The script includes information about data sources.
+
 ### List of species
 
 ``` r
@@ -386,6 +385,9 @@ done
 
 # Adding reliability table for species annotated by me
 
+The script at the same time plots histograms of protein length for
+different categories of protein reliability.
+
 ``` r
 setwd("D:/!ecolgen/Brassicaceae_orthology/brassicaceae_3/")
 if(!exists("old.par")) old.par<-par(no.readonly = T)
@@ -407,6 +409,9 @@ length.hist.2 <- data.frame(bins = seq(from = l.min + (l.by / 2), to = l.max - (
 
 # write files?
 write.files <- F
+
+## Loop through the species
+# Add reliability table and collect data for histograms
 
 for(i in seq_along(files.list)) {
     
@@ -570,113 +575,6 @@ for(i in seq_along(g.input)) {
 }
 ```
 
-# Statistics of functional annotation
-
-## GO terms
-
-Counting GO terms per gene, plotting the histograms
-
-``` r
-setwd("D:/!ecolgen/Brassicaceae_orthology/brassicaceae_3/")
-if(!exists("old.par")) old.par<-par(no.readonly = T)
-
-# read the short version of annotation file
-ann.files <- list.files(path = "functional_annotation/1_only_At_orthologues_and_GO/", pattern = ".tsv")
-species <- sub(pattern = "_At_orthologues_and_GO.tsv", replacement = "", x = ann.files, fixed = T)
-
-# chosen species for testing of the loop
-one.species <- "Arabidopsis_arenosa"
-
-
-### Start of the  loop
-
-# prepare data frames
-go.hist <- data.frame(bins = 0:99)
-go.stat <- data.frame()
-
-for(one.species in species) {
-    short.ann <- read.table(file = paste0("functional_annotation/1_only_At_orthologues_and_GO/", one.species, "_At_orthologues_and_GO.tsv"), header = T, sep = "\t", na.strings = "",
-                                                    comment.char = "", quote = "")
-
-    # number of GO terms per gene
-    go.num <- sapply(X = short.ann$GO_term_IDs, FUN = function(x) {sum(unlist(gregexpr(pattern = "GO:", text = x)) > 0)}, USE.NAMES = F)
-    go.num[is.na(short.ann$GO_term_IDs)] <- 0
-    
-    # calculate data for histograms
-    spec.hist <- hist(go.num, breaks = seq(from = go.hist$bins[1]-0.5, to = go.hist$bins[nrow(go.hist)]+0.5), xlim = c(0, 30), main = one.species)
-    
-    # save to prepared dataframe
-    go.hist[, one.species] <- spec.hist$density
-
-    # save statistics to prepared dataframe
-    go.stat[1, "legend"] <- "Mean count of GO terms per gene"
-    go.stat[1, one.species] <- mean(go.num)
-    
-    go.stat[2, "legend"] <- "Median count of GO terms per gene"
-    go.stat[2, one.species] <- median(go.num)
-    
-    go.stat[3, "legend"] <- "Percentage of genes without GO term"
-    go.stat[3, one.species] <- 100*sum(is.na(short.ann$GO_term_IDs))/nrow(short.ann)
-    
-    go.stat[4, "legend"] <- "Genes with some GO term"
-    # go.stat[4, one.species] <- 100 -100*sum(is.na(short.ann$GO_term_IDs))/nrow(short.ann)
-    go.stat[4, one.species] <- paste0(formatC(x = sum(!is.na(short.ann$GO_term_IDs)), big.mark = " "), " (", round(sum(!is.na(short.ann$GO_term_IDs))/nrow(short.ann), 2)*100, "%)")
-    
-    print(paste(one.species, "done."))
-}
-## End of loop
-
-## export table with statistics
-dir.create(path = "figs_and_stats", recursive = T, showWarnings = F)
-write.table(x = go.stat, 
-                        file = "figs_and_stats/functional_annotation_stats.tsv",
-                        sep = "\t", row.names = F, na = "", quote = F)
-
-## export table with statistics for publication
-go.stat.pub <- go.stat[, c("legend", "Aethionema_saxatile", "Cardamine_glauca", "Erysimum_linariifolium", "Noccaea_praecox", "Odontarrhena_muralis")]
-# go.stat.pub[ ,-1] <- round(go.stat.pub[ ,-1], 1)
-write.table(x = go.stat.pub, 
-                        file = "figs_and_stats/functional_annotation_stats_for_pub.tsv",
-                        sep = "\t", row.names = F, na = "", quote = F)
-
-## Plotting histograms
-pdf ("figs_and_stats/n_GO_terms_histogram.pdf", width=7, height=7, onefile = T)
-
-# all species
-g.data <- go.hist
-matplot(x = g.data$bins, y = g.data[, -1], type = "l", xlim = c(0, 30), lty = 1, col = rainbow(ncol(g.data)-1),
-                main = "Number of GO terms per gene", ylab = "Frequency", xlab = "Number of GO terms per gene")
-legend(x = "topright", legend = colnames(g.data[-1]), col = rainbow(ncol(g.data)-1), lty = 1)
-
-# Focus species
-colnames(go.hist)
-g.data <- go.hist[, c("bins", "Aethionema_saxatile", "Alyssum_gmelinii", "Arabidopsis_arenosa", "Arabidopsis_lyrata_NCBI", "Arabidopsis_lyrata_Rawat", "Cardamine_amara", "Cardamine_glauca", "Erysimum_linariifolium", "Noccaea_praecox", "Odontarrhena_muralis")]
-matplot(x = g.data$bins, y = g.data[, -1], type = "l", xlim = c(0, 30), lty = 1, col = rainbow(ncol(g.data)-1),
-                main = "Number of GO terms per gene", ylab = "Frequency", xlab = "Number of GO terms per gene")
-legend(x = "topright", legend = colnames(g.data[-1]), col = rainbow(ncol(g.data)-1), lty = 1)
-
-# Our annotations
-g.data <- go.hist[, c("bins", "Aethionema_saxatile", "Alyssum_gmelinii", "Cardamine_glauca", "Erysimum_linariifolium", "Noccaea_praecox", "Odontarrhena_muralis")]
-matplot(x = g.data$bins, y = g.data[, -1], type = "l", xlim = c(0, 30), lty = 1, col = rainbow(ncol(g.data)-1),
-                main = "Number of GO terms per gene", ylab = "Frequency", xlab = "Number of GO terms per gene")
-legend(x = "topright", legend = colnames(g.data[-1]), col = rainbow(ncol(g.data)-1), lty = 1)
-
-# Resource paper
-g.data <- go.hist[, c("bins", "Aethionema_saxatile", "Cardamine_glauca", "Erysimum_linariifolium", "Noccaea_praecox", "Odontarrhena_muralis")]
-matplot(x = g.data$bins, y = g.data[, -1], type = "l", xlim = c(0, 30), lty = 1, lwd = 2, col = rainbow(ncol(g.data)-1),
-                main = "Number of GO terms per gene", ylab = "Frequency", xlab = "Number of GO terms per gene")
-legend(x = "topright", legend = colnames(g.data[-1]), col = rainbow(ncol(g.data)-1), lwd = 2, lty = 1)
-
-dev.off()
-```
-
-### Notes to the results
-
-As in other statistics, *Cochlearia* seems to have over-predicted genes.
-Almost 30 % of it’s genes doesn’t have any GO term annotation, which is
-much higher than in other species. Most of them are probably not real
-protein-coding genes.
-
 # Description of output tables
 
 There are several versions of tables (with different subsets of columns)
@@ -686,12 +584,12 @@ can use the one which suits you:
 1.  [1_only_At_orthologues_and_GO](functional_annotation/1_only_At_orthologues_and_GO/)
     - Only the main columns: `Species_name` (gene IDs of the given
       species), `prot_length`, `Arabidopsis_thaliana`,
-      `single_Arabidopsis_thaliana`, `homologue_type`, `GO_term_IDs`,
+      `single_Arabidopsis_thaliana`, `homologue_type`, `GO_term_IDs` and
       `UniProt_Protein.names`
     - Format: plain tsv
 2.  [2_full_without_InterProScan_pathways_tsv_gz](functional_annotation/2_full_without_InterProScan_pathways_tsv_gz/)
-    - All columns, just without `InterProScan_pathways`, which is very
-      big.
+    - All columns, just without `InterProScan_pathways` column, which
+      contains a lot of data, making files too big.
     - Format: gzipped tsv
 3.  [3_InterProScan_pathways_tsv_gz](functional_annotation/3_InterProScan_pathways_tsv_gz/)
     - Only `Species_name` (gene IDs of the given species) and
