@@ -16,7 +16,7 @@ The purpose of this project is to obtain gene orthology relationships between se
 
 ## Version history
 
-Version 3.0 (2025-10)
+Version 3.0 (2025-12)
 - Species added:
 	- *Aethionema saxatile*
 	- *Brassica napus*
