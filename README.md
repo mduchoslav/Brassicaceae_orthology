@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/939994176.svg)](https://doi.org/10.5281/zenodo.18741923)
+
 Orthology and functional annotation of some Brassicaceae genomes
 ================
 Miloš Duchoslav
@@ -16,7 +18,7 @@ The purpose of this project is to obtain gene orthology relationships between se
 
 ## Version history
 
-Version 3.0 (2025-12)
+[Version 3.0](https://github.com/mduchoslav/Brassicaceae_orthology/tree/3.0) (2025-12) [![DOI](https://zenodo.org/badge/939994176.svg)](https://doi.org/10.5281/zenodo.18741923)
 - Species added:
 	- *Aethionema saxatile*
 	- *Brassica napus*
