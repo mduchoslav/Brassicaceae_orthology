@@ -127,11 +127,12 @@ I use for documentation RMarkdown combining snippets of R code and Bash code. Th
 	
 ## Intermediate results
 
-1. [Protein sequences of primary transcript](primary_transcripts/) - sequences of longest isoforms as input to OrthoFinder.
-2. [OrthoFinder results](orthofinder_results/Results_brassicaceae_3/) - main files from OrthoFinder output.
-3. [Length of protein sequences](protein_length_primary_transcripts/) - length of primary transcripts (in amino acid residues).
+1. [Gene - mRNA - protein accession translation table (NCBI)](gene_mRNA_protein_translation_tables_ncbi/) - Table for translation between accessions of proteins, transcripts and genes for genomes annotated by NCBI, where the accessions doesn't have the same part. This information was extracted from GFF.
+2. [Protein sequences of primary transcript](primary_transcripts/) - sequences of longest isoforms as input to OrthoFinder.
+3. [OrthoFinder results](orthofinder_results/Results_brassicaceae_3/) - main files from OrthoFinder output.
+4. [Length of protein sequences](protein_length_primary_transcripts/) - length of primary transcripts (in amino acid residues).
 	- The same information is also in the final results.
-4. [Supplemented orthologues](supplemented_orthologues/) - Orthologues between each species and *A. thaliana* from OrthoFinder supplemented with homologues using other methods.
+5. [Supplemented orthologues](supplemented_orthologues/) - Orthologues between each species and *A. thaliana* from OrthoFinder supplemented with homologues using other methods.
 	- Description of columns in the output tables is in [2_Supplementing_orthologues](2_Supplementing_orthologues.md#explanation-of-columns-in-output-table).
 	- The same information is also in the final results.
 	
