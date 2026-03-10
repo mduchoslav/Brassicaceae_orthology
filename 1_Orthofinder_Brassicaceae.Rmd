@@ -119,6 +119,9 @@ done
 
 # copy the files to the folder with all primary transcripts
 cp longest_transcripts/*.fasta ../primary_transcripts/
+
+# move gene_mRNA_protein_translation_tables
+mv gene_mRNA_protein_translation_tables/ ../gene_mRNA_protein_translation_tables_ncbi
 ```
 
 
