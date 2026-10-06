@@ -1,0 +1,309 @@
+---
+title: "Phylogenomic tree"
+author: "Miloš Duchoslav"
+date: "2026-10"
+output:
+  github_document:
+    toc: true
+    toc_depth: 2
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+# Setting NO evaluation of code chunks as default (needed for knitting of bash code without trying to run that)
+knitr::opts_chunk$set(eval = FALSE)
+```
+
+# Introduction
+
+
+
+### SW installation and versions
+
+The SW installation instructions and versions of SW used is described in [Installation_of_SW.md](Installation_of_SW.md).
+
+
+# Data preparation
+
+## Script to get distribution of number of orthogroups with different numbers of genes
+
+Just for orthogroups with all species present.
+
+```{sh}
+cd /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/
+mkdir phylo_tree
+cd /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree
+mkdir input_orthogroups
+
+GENECOUNT="../orthofinder_results/Results_brassicaceae_3/Orthogroups/Orthogroups.GeneCount.tsv"
+
+awk '
+BEGIN { FS="\t" }
+
+NR > 1 {
+    all_present = 1
+
+    for (i = 2; i <= NF - 1; i++) {
+        if ($i == 0) {
+            all_present = 0
+            break
+        }
+    }
+
+    if (all_present)
+        print $NF
+}
+' ${GENECOUNT} |
+sort -n |
+uniq -c
+```
+
+
+```
+      3 23
+     49 24
+    311 25
+   1392 26
+   1327 27
+    887 28
+    594 29
+    633 30
+    820 31
+    855 32
+    654 33
+    414 34
+    304 35
+    288 36
+    298 37
+    220 38
+    153 39
+    124 40
+     98 41
+     76 42
+     74 43
+     68 44
+     63 45
+     73 46
+     75 47
+     62 48
+     71 49
+    105 50
+    ... (not full result)
+```
+
+
+```{sh}
+GENECOUNT="../orthofinder_results/Results_brassicaceae_3/Orthogroups/Orthogroups.GeneCount.tsv"
+MAX_GENES=30
+
+OUT_PREFIX="input_orthogroups/complete_orthogroups_max${MAX_GENES}"
+
+echo "Input file: ${GENECOUNT}"
+echo "Maximum number of genes per orthogroup: ${MAX_GENES}"
+echo
+
+# Overwrite existing output files
+> "${OUT_PREFIX}.tsv"
+> "${OUT_PREFIX}.ids.txt"
+
+awk -v maxgenes="$MAX_GENES" \
+    -v outfile="${OUT_PREFIX}.tsv" \
+    -v idfile="${OUT_PREFIX}.ids.txt" '
+BEGIN {
+    FS = OFS = "\t"
+}
+
+NR == 1 {
+    # OrthoFinder GeneCount table:
+    # column 1 = Orthogroup
+    # columns 2...(NF-1) = species
+    # last column = Total
+
+    nspecies = NF - 2
+
+    print "Number of species detected:", nspecies > "/dev/stderr"
+
+    print $0 >> outfile
+    next
+}
+
+{
+    all_present = 1
+
+    # Check whether every species has at least one gene
+    for (i = 2; i <= NF - 1; i++) {
+        if ($i == 0) {
+            all_present = 0
+            break
+        }
+    }
+
+    total_genes = $NF
+
+    if (all_present) {
+        complete++
+
+        if (total_genes <= maxgenes) {
+            retained++
+            print $0 >> outfile
+            print $1 >> idfile
+        }
+    }
+}
+
+END {
+    print ""
+    print "Summary:"
+    print "Complete orthogroups (all species present):", complete
+    print "Complete orthogroups with <=", maxgenes, "genes:", retained
+}
+' "$GENECOUNT"
+
+echo
+echo "Output files:"
+echo "  ${OUT_PREFIX}.tsv"
+echo "  ${OUT_PREFIX}.ids.txt"
+
+```
+
+```
+Number of species detected:     23
+
+Summary:
+Complete orthogroups (all species present):     11890
+Complete orthogroups with <=    30      genes:  5196
+
+Output files:
+  input_orthogroups/complete_orthogroups_max30.tsv
+  input_orthogroups/complete_orthogroups_max30.ids.txt
+```
+
+# MAFFT alignment of orthogroups
+
+```{sh}
+### Metacentrum script
+
+#!/bin/bash
+#PBS -N mafft_orthogroups
+#PBS -l select=1:ncpus=32:mem=64gb:scratch_local=10gb
+#PBS -l walltime=24:00:00
+#PBS -m ae
+
+set -euo pipefail
+
+############################
+# User-defined variables
+############################
+
+# Directory with OrthoFinder orthogroup FASTA files
+INPUT_DIR="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/orthofinder_results/Results_brassicaceae_3/Orthogroup_Sequences"
+
+# File containing selected orthogroup IDs, one per line
+ORTHOGROUP_LIST="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree/input_orthogroups/complete_orthogroups_max30.ids.txt"
+
+# Directory for MAFFT alignments
+OUTPUT_DIR="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree/mafft_alignments"
+
+# Number of parallel MAFFT jobs
+NCPU=32
+
+############################
+# Environment
+############################
+
+module load mafft
+
+mkdir -p "$OUTPUT_DIR"
+
+cd "$OUTPUT_DIR"
+
+echo "Starting MAFFT alignments"
+echo "Input directory:    $INPUT_DIR"
+echo "Orthogroup list:    $ORTHOGROUP_LIST"
+echo "Output directory:   $OUTPUT_DIR"
+echo "Parallel jobs:      $NCPU"
+echo "Start time:         $(date "+%Y-%m-%d %H:%M:%S")"
+echo "MAFFT version:"
+mafft --version
+echo
+
+############################
+# Alignment function
+############################
+
+align_one() {
+
+    og="$1"
+
+    # Remove possible Windows carriage returns
+    og="${og//$'\r'/}"
+
+    # Skip empty lines
+    [[ -z "$og" ]] && return
+
+    infile="${INPUT_DIR}/${og}.fa"
+    outfile="${OUTPUT_DIR}/${og}.aln.fa"
+
+    # Check whether the input file exists
+    if [[ ! -f "$infile" ]]; then
+        echo "WARNING: Input file not found: $infile" >&2
+        return
+    fi
+
+    # Skip already completed alignments
+    if [[ -s "$outfile" ]]; then
+        echo "Skipping existing alignment: $og"
+        return
+    fi
+
+    echo "Aligning: $og"
+
+    mafft \
+        --auto \
+        --thread 1 \
+        "$infile" \
+        > "$outfile"
+}
+
+export -f align_one
+export INPUT_DIR
+export OUTPUT_DIR
+
+############################
+# Run selected orthogroups
+############################
+
+grep -v '^[[:space:]]*$' "$ORTHOGROUP_LIST" |
+    xargs -n 1 -P "$NCPU" bash -c 'align_one "$1"' _
+
+############################
+# Summary
+############################
+
+N_SELECTED=$(grep -cv '^[[:space:]]*$' "$ORTHOGROUP_LIST")
+
+N_OUTPUT=$(find "$OUTPUT_DIR" \
+    -maxdepth 1 \
+    -type f \
+    -name "*.aln.fa" \
+    -size +0c |
+    wc -l)
+
+echo
+echo "MAFFT alignment finished"
+echo "Selected orthogroups: $N_SELECTED"
+echo "Completed alignments: $N_OUTPUT"
+echo "End time:             $(date "+%Y-%m-%d %H:%M:%S")"
+
+# clean the SCRATCH directory
+clean_scratch
+```
+
+```{sh}
+cd /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/metacentrum_scripts
+
+```
+
+
+
