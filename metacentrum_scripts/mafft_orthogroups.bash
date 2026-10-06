@@ -2,8 +2,8 @@
 
 #!/bin/bash
 #PBS -N mafft_orthogroups
-#PBS -l select=1:ncpus=32:mem=64gb:scratch_local=10gb
-#PBS -l walltime=24:00:00
+#PBS -l select=1:ncpus=16:mem=8gb:scratch_local=10gb
+#PBS -l walltime=1:00:00
 #PBS -m ae
 
 set -euo pipefail
@@ -13,7 +13,7 @@ set -euo pipefail
 ############################
 
 # Directory with OrthoFinder orthogroup FASTA files
-INPUT_DIR="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/orthofinder_results/Results_brassicaceae_3/Orthogroup_Sequences"
+INPUT_DIR="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree/input_orthogroups/renamed_fastas"
 
 # File containing selected orthogroup IDs, one per line
 ORTHOGROUP_LIST="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree/input_orthogroups/complete_orthogroups_max30.ids.txt"
@@ -22,7 +22,7 @@ ORTHOGROUP_LIST="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brass
 OUTPUT_DIR="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree/mafft_alignments"
 
 # Number of parallel MAFFT jobs
-NCPU=32
+NCPU=16
 
 ############################
 # Environment
@@ -41,7 +41,7 @@ echo "Output directory:   $OUTPUT_DIR"
 echo "Parallel jobs:      $NCPU"
 echo "Start time:         $(date "+%Y-%m-%d %H:%M:%S")"
 echo "MAFFT version:"
-mafft --version
+mafft --version 2>&1
 echo
 
 ############################

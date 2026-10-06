@@ -179,6 +179,205 @@ Output files:
   input_orthogroups/complete_orthogroups_max30.ids.txt
 ```
 
+## Add species names to protein names in fasta files before alignment
+
+Just for orthogroups that will be used for alignment.
+```{sh}
+cd /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree
+
+
+############################
+# User-defined variables
+############################
+
+# OrthoFinder table with genes separated by species
+ORTHOGROUPS_TSV="../orthofinder_results/Results_brassicaceae_3/Orthogroups/Orthogroups.tsv"
+
+# Original OrthoFinder orthogroup FASTA files
+INPUT_DIR="../orthofinder_results/Results_brassicaceae_3/Orthogroup_Sequences"
+
+# Selected orthogroups
+ORTHOGROUP_LIST="input_orthogroups/complete_orthogroups_max30.ids.txt"
+
+# Output directory for renamed FASTA files
+OUTPUT_DIR="input_orthogroups/renamed_fastas"
+
+mkdir -p "$OUTPUT_DIR"
+
+echo "Starting FASTA header renaming"
+echo "Orthogroups table:  $ORTHOGROUPS_TSV"
+echo "Orthogroup list:    $ORTHOGROUP_LIST"
+echo "Input directory:    $INPUT_DIR"
+echo "Output directory:   $OUTPUT_DIR"
+echo
+
+############################
+# Rename FASTA headers
+############################
+
+awk \
+    -v input_dir="$INPUT_DIR" \
+    -v output_dir="$OUTPUT_DIR" '
+    
+BEGIN {
+    FS = OFS = "\t"
+}
+
+################################
+# First input: selected OG IDs
+################################
+
+ARGIND == 1 {
+
+    # Remove possible Windows carriage return
+    gsub(/\r/, "")
+
+    if ($1 != "")
+        selected[$1] = 1
+
+    next
+}
+
+################################
+# Second input: Orthogroups.tsv
+################################
+
+ARGIND == 2 && FNR == 1 {
+
+    # Store species names from header
+    for (i = 2; i <= NF; i++) {
+
+        species[i] = $i
+
+        # Remove Windows carriage returns
+        gsub(/\r/, "", species[i])
+
+        # Replace spaces with underscores
+        gsub(/ /, "_", species[i])
+    }
+
+    next
+}
+
+ARGIND == 2 {
+
+    og = $1
+
+    # Ignore orthogroups that were not selected
+    if (!(og in selected))
+        next
+
+    print "Processing: " og > "/dev/stderr"
+
+    ################################
+    # Build map only for this OG
+    ################################
+
+    delete gene_species
+
+    for (i = 2; i <= NF; i++) {
+
+        field = $i
+
+        # Remove Windows carriage returns
+        gsub(/\r/, "", field)
+
+        if (field == "")
+            continue
+
+        # Multiple genes in one species are comma-separated
+        n = split(field, genes, ", ")
+
+        for (j = 1; j <= n; j++) {
+
+            gene = genes[j]
+            gsub(/\r/, "", gene)
+
+            gene_species[gene] = species[i]
+        }
+    }
+
+    ################################
+    # Rename corresponding FASTA
+    ################################
+
+    infile  = input_dir "/" og ".fa"
+    outfile = output_dir "/" og ".fa"
+
+    # Make sure an existing output is overwritten
+    printf "" > outfile
+    close(outfile)
+
+    found_fasta = 0
+
+    while ((getline line < infile) > 0) {
+
+        found_fasta = 1
+
+        if (line ~ /^>/) {
+
+            header = substr(line, 2)
+            gsub(/\r/, "", header)
+
+            # Original gene ID = first whitespace-delimited field
+            split(header, x, /[[:space:]]+/)
+            gene = x[1]
+
+            if (gene in gene_species) {
+                print ">" gene_species[gene] "|" gene >> outfile
+            }
+            else {
+                print ">" gene >> outfile
+                print "WARNING: Species not found for gene " gene \
+                    " in " og > "/dev/stderr"
+            }
+        }
+        else {
+            gsub(/\r/, "", line)
+            print line >> outfile
+        }
+    }
+
+    close(infile)
+    close(outfile)
+
+    if (!found_fasta)
+        print "WARNING: FASTA file not found or empty: " infile \
+            > "/dev/stderr"
+
+    processed[og] = 1
+}
+
+END {
+
+    n_selected = 0
+    n_processed = 0
+
+    for (og in selected) {
+        n_selected++
+
+        if (og in processed)
+            n_processed++
+        else
+            print "WARNING: Selected orthogroup not found in Orthogroups.tsv: " og \
+                > "/dev/stderr"
+    }
+
+    print ""
+    print "Summary:"
+    print "Selected orthogroups:", n_selected
+    print "Processed orthogroups:", n_processed
+}
+
+' "$ORTHOGROUP_LIST" "$ORTHOGROUPS_TSV"
+
+echo
+echo "Finished."
+echo "Renamed FASTA files:"
+echo "  $OUTPUT_DIR"
+```
+
+
 # MAFFT alignment of orthogroups
 
 ```{sh}
@@ -186,8 +385,8 @@ Output files:
 
 #!/bin/bash
 #PBS -N mafft_orthogroups
-#PBS -l select=1:ncpus=32:mem=64gb:scratch_local=10gb
-#PBS -l walltime=24:00:00
+#PBS -l select=1:ncpus=16:mem=8gb:scratch_local=10gb
+#PBS -l walltime=1:00:00
 #PBS -m ae
 
 set -euo pipefail
@@ -197,7 +396,7 @@ set -euo pipefail
 ############################
 
 # Directory with OrthoFinder orthogroup FASTA files
-INPUT_DIR="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/orthofinder_results/Results_brassicaceae_3/Orthogroup_Sequences"
+INPUT_DIR="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree/input_orthogroups/renamed_fastas"
 
 # File containing selected orthogroup IDs, one per line
 ORTHOGROUP_LIST="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree/input_orthogroups/complete_orthogroups_max30.ids.txt"
@@ -206,7 +405,7 @@ ORTHOGROUP_LIST="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brass
 OUTPUT_DIR="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree/mafft_alignments"
 
 # Number of parallel MAFFT jobs
-NCPU=32
+NCPU=16
 
 ############################
 # Environment
@@ -225,7 +424,7 @@ echo "Output directory:   $OUTPUT_DIR"
 echo "Parallel jobs:      $NCPU"
 echo "Start time:         $(date "+%Y-%m-%d %H:%M:%S")"
 echo "MAFFT version:"
-mafft --version
+mafft --version 2>&1
 echo
 
 ############################
@@ -298,12 +497,140 @@ echo "End time:             $(date "+%Y-%m-%d %H:%M:%S")"
 
 # clean the SCRATCH directory
 clean_scratch
+
+# Resources:
+# With 32 CPUs: Just 4 min, 0,87 GB memory, 76 % CPU
+# With 16 CPUs: Just 6,5 min, 0,67 GB memory, 83 % CPU
 ```
 
 ```{sh}
 cd /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/metacentrum_scripts
-
+qsub mafft_orthogroups.bash
 ```
 
+# IQ-TREE calculation of trees for each orthogroup
+
+Model is selected manually as `-m LG+G4` to get fast calculation.
+
+```{sh}
+### Metacentrum script
+
+#!/bin/bash
+#PBS -N iqtree_gene_trees
+#PBS -l select=1:ncpus=32:mem=64gb:scratch_local=10gb
+#PBS -l walltime=24:00:00
+#PBS -m ae
+
+set -euo pipefail
+
+############################
+# User-defined variables
+############################
+
+# Directory with MAFFT alignments
+INPUT_DIR="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree/mafft_alignments"
+
+# File containing selected orthogroup IDs, one per line
+ORTHOGROUP_LIST="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree/input_orthogroups/complete_orthogroups_max30.ids.txt"
+
+# Directory for IQ-TREE results
+OUTPUT_DIR="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree/iqtree_gene_trees"
+
+# Number of parallel IQ-TREE jobs
+NCPU=1
+
+############################
+# Environment
+############################
+
+module load iqtree
+
+mkdir -p "$OUTPUT_DIR"
+
+cd "$OUTPUT_DIR"
+
+echo "Starting IQ-TREE gene tree inference"
+echo "Input directory:    $INPUT_DIR"
+echo "Orthogroup list:    $ORTHOGROUP_LIST"
+echo "Output directory:   $OUTPUT_DIR"
+echo "Parallel jobs:      $NCPU"
+echo "Start time:         $(date "+%Y-%m-%d %H:%M:%S")"
+echo "IQ-TREE version:"
+iqtree3-mpi --version 2>&1
+echo
+
+############################
+# Gene tree function
+############################
+
+tree_one() {
+
+    og="$1"
+
+    # Remove possible Windows carriage returns
+    og="${og//$'\r'/}"
+
+    # Skip empty lines
+    [[ -z "$og" ]] && return
+
+    infile="${INPUT_DIR}/${og}.aln.fa"
+    prefix="${OUTPUT_DIR}/${og}"
+
+    # Check whether the input alignment exists
+    if [[ ! -f "$infile" ]]; then
+        echo "WARNING: Input alignment not found: $infile" >&2
+        return
+    fi
+
+    # Skip already completed trees
+    if [[ -s "${prefix}.treefile" ]]; then
+        echo "Skipping existing tree: $og"
+        return
+    fi
+
+    echo "Inferring tree: $og"
+
+    iqtree3-mpi \
+        -s "$infile" \
+        -m LG+G4 \
+        -T 1 \
+        --prefix "$prefix" \
+        --quiet
+}
+
+export -f tree_one
+export INPUT_DIR
+export OUTPUT_DIR
+
+############################
+# Run selected orthogroups
+############################
+
+grep -v '^[[:space:]]*$' "$ORTHOGROUP_LIST" |
+    xargs -n 1 -P "$NCPU" bash -c 'tree_one "$1"' _
+
+############################
+# Summary
+############################
+
+N_SELECTED=$(grep -cv '^[[:space:]]*$' "$ORTHOGROUP_LIST")
+
+N_OUTPUT=$(find "$OUTPUT_DIR" \
+    -maxdepth 1 \
+    -type f \
+    -name "*.treefile" \
+    -size +0c |
+    wc -l)
+
+echo
+echo "IQ-TREE gene tree inference finished"
+echo "Selected orthogroups: $N_SELECTED"
+echo "Completed trees:      $N_OUTPUT"
+echo "End time:             $(date "+%Y-%m-%d %H:%M:%S")"
+
+# clean the SCRATCH directory
+clean_scratch
+
+```
 
 

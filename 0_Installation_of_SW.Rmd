@@ -101,3 +101,16 @@ module list
 ./interproscan.sh -i test_all_appl.fasta -f tsv -dp
 ./interproscan.sh -i test_all_appl.fasta -f tsv
 ```
+
+## MAFFT
+
+I used MAFFT installed as module on Metacentrum.
+
+```{sh}
+# load module
+module load mafft
+
+# version
+mafft --version
+# v7.520 (2023/Mar/22)
+```
