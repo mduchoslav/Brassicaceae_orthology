@@ -377,6 +377,128 @@ echo "Renamed FASTA files:"
 echo "  $OUTPUT_DIR"
 ```
 
+# Select random sequence for each species in each orthogroup
+
+In this step I will get single-copy orthologues. Foer each species, if there are several paralogs, one will be selected randomly. This shouldn't be making much bias, because I selected orthogroups with only few paralogs (at least one sequence for each of 23 species and maximally 30 sequences). Most of the paralogs are probably duplications within species or copies from different ancestors in allopolyploids like *Brassica napus*.
+
+```{sh}
+cd /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree
+
+
+############################
+# User-defined variables
+############################
+
+# Directory with renamed FASTA files
+INPUT_DIR="input_orthogroups/renamed_fastas"
+
+# Directory for FASTA files with one random sequence per species
+OUTPUT_DIR="input_orthogroups/random_single_copy_fastas"
+
+# Random seed for reproducibility
+SEED=12345
+
+############################
+# Setup
+############################
+
+mkdir -p "$OUTPUT_DIR"
+
+echo "Starting random sequence selection"
+echo "Input directory:  $INPUT_DIR"
+echo "Output directory: $OUTPUT_DIR"
+echo "Random seed:      $SEED"
+echo
+
+############################
+# Process FASTA files
+############################
+
+for infile in "$INPUT_DIR"/*.fa; do
+
+    filename=$(basename "$infile")
+    outfile="${OUTPUT_DIR}/${filename}"
+
+    echo "Processing: $filename"
+
+    awk -v seed="$SEED" '
+
+    BEGIN {
+        srand(seed)
+        record = ""
+    }
+
+    function store_record(    sp) {
+
+        if (header == "")
+            return
+
+        # Species name is the part before "|"
+        split(header, x, "|")
+        sp = x[1]
+
+        count[sp]++
+
+        headers[sp, count[sp]] = header
+        seqs[sp, count[sp]] = sequence
+    }
+
+    /^>/ {
+
+        # Store previous sequence
+        store_record()
+
+        header = substr($0, 2)
+        sequence = ""
+
+        next
+    }
+
+    {
+        sequence = sequence $0
+    }
+
+    END {
+
+        # Store final sequence
+        store_record()
+
+        # Select one random sequence per species
+        for (sp in count) {
+
+            chosen = int(rand() * count[sp]) + 1
+
+            print ">" headers[sp, chosen]
+            print seqs[sp, chosen]
+        }
+    }
+
+    ' "$infile" > "$outfile"
+
+done
+
+echo
+echo "Finished random sequence selection."
+echo "Output directory:"
+echo "  $OUTPUT_DIR"
+```
+
+## Checking results
+
+```{sh}
+ls $INPUT_DIR | wc -l
+ls $OUTPUT_DIR | wc -l
+
+grep '>' $INPUT_DIR/OG0018051.fa | sort
+echo ""
+grep '>' $OUTPUT_DIR/OG0018051.fa | sort
+
+grep '>' $INPUT_DIR/OG0009637.fa | sort
+echo ""
+grep '>' $OUTPUT_DIR/OG0009637.fa | sort
+
+```
+
 
 # MAFFT alignment of orthogroups
 
@@ -385,7 +507,7 @@ echo "  $OUTPUT_DIR"
 
 #!/bin/bash
 #PBS -N mafft_orthogroups
-#PBS -l select=1:ncpus=16:mem=8gb:scratch_local=10gb
+#PBS -l select=1:ncpus=16:mem=2gb:scratch_local=10gb
 #PBS -l walltime=1:00:00
 #PBS -m ae
 
@@ -396,7 +518,7 @@ set -euo pipefail
 ############################
 
 # Directory with OrthoFinder orthogroup FASTA files
-INPUT_DIR="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree/input_orthogroups/renamed_fastas"
+INPUT_DIR="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree/input_orthogroups/random_single_copy_fastas"
 
 # File containing selected orthogroup IDs, one per line
 ORTHOGROUP_LIST="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree/input_orthogroups/complete_orthogroups_max30.ids.txt"
@@ -690,209 +812,4 @@ for i in {1..11}; do
 done
 ```
 
-
-# Tree pruning with OrthoSNAP
-
-## Testing
-```{sh}
-cd /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree
-
-# Directory with MAFFT alignments
-ALIGN_DIR="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree/mafft_alignments"
-
-# Directory with IQ-TREE gene trees
-TREE_DIR="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree/iqtree_gene_trees"
-
-# File containing selected orthogroup IDs
-ORTHOGROUP_LIST="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree/input_orthogroups/complete_orthogroups_max30.ids.txt"
-
-# Output directory
-OUTPUT_DIR="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree/orthosnap_testing"
-
-# OrthoSNAP virtual environment
-ORTHOSNAP_ENV="/storage/brno12-cerit/home/duchmil/SW/orthosnap_env"
-
-# Number of species required in retained SNAP-OGs
-N_SPECIES=23
-
-
-module load python
-source "${ORTHOSNAP_ENV}/bin/activate"
-
-mkdir -p "$OUTPUT_DIR"
-
-
-MANIFEST="${OUTPUT_DIR}/orthosnap_manifest_test.tsv"
-
-printf "fasta\ttree\n" > "$MANIFEST"
-
-N_INPUT=0
-N_MISSING=0
-
-while read -r og; do
-
-    og="${og//$'\r'/}"
-    [[ -z "$og" ]] && continue
-
-    fasta="${ALIGN_DIR}/${og}.aln.fa"
-    tree="${TREE_DIR}/${og}.treefile"
-
-    if [[ ! -f "$fasta" ]]; then
-        echo "WARNING: Missing alignment: $fasta" >&2
-        ((N_MISSING+=1))
-        continue
-    fi
-
-    if [[ ! -f "$tree" ]]; then
-        echo "WARNING: Missing tree: $tree" >&2
-        ((N_MISSING+=1))
-        continue
-    fi
-
-    printf "%s\t%s\n" "$fasta" "$tree" >> "$MANIFEST"
-    ((N_INPUT+=1))
-
-done < <(head -n 10 "$ORTHOGROUP_LIST")
-
-echo "Valid orthogroups in manifest: $N_INPUT"
-echo "Missing inputs:                $N_MISSING"
-echo
-
-############################
-# Run OrthoSNAP
-############################
-
-orthosnap \
-    --manifest "$MANIFEST" \
-    --occupancy-count "$N_SPECIES" \
-    --support 0 \
-    --structured-output \
-    -op "$OUTPUT_DIR"
-    
-orthosnap \
-    --manifest "$MANIFEST" \
-    --support 0 \
-    --structured-output \
-    -op "$OUTPUT_DIR" \
-    --plot_snap_ogs
-    
-```
-
-
-```{sh}
-#!/bin/bash
-#PBS -N orthosnap_pruning
-#PBS -l select=1:ncpus=8:mem=32gb:scratch_local=10gb
-#PBS -l walltime=24:00:00
-#PBS -m ae
-
-set -euo pipefail
-
-############################
-# User-defined variables
-############################
-
-# Directory with MAFFT alignments
-ALIGN_DIR="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree/mafft_alignments"
-
-# Directory with IQ-TREE gene trees
-TREE_DIR="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree/iqtree_gene_trees"
-
-# File containing selected orthogroup IDs
-ORTHOGROUP_LIST="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree/input_orthogroups/complete_orthogroups_max30.ids.txt"
-
-# Output directory
-OUTPUT_DIR="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree/orthosnap_pruned_trees"
-
-# OrthoSNAP virtual environment
-ORTHOSNAP_ENV="/storage/brno12-cerit/home/duchmil/SW/orthosnap_env"
-
-# Number of species required in retained SNAP-OGs
-N_SPECIES=23
-
-############################
-# Environment
-############################
-
-module load python
-source "${ORTHOSNAP_ENV}/bin/activate"
-
-mkdir -p "$OUTPUT_DIR"
-
-echo "Starting OrthoSNAP pruning"
-echo "Alignment directory: $ALIGN_DIR"
-echo "Tree directory:      $TREE_DIR"
-echo "Orthogroup list:     $ORTHOGROUP_LIST"
-echo "Output directory:    $OUTPUT_DIR"
-echo "Required species:    $N_SPECIES"
-echo "Start time:          $(date "+%Y-%m-%d %H:%M:%S")"
-echo
-echo "OrthoSNAP version:"
-orthosnap --version 2>&1
-echo
-
-############################
-# Create manifest
-############################
-
-MANIFEST="${SCRATCHDIR}/orthosnap_manifest.tsv"
-
-printf "fasta\ttree\n" > "$MANIFEST"
-
-N_INPUT=0
-N_MISSING=0
-
-while read -r og; do
-
-    og="${og//$'\r'/}"
-    [[ -z "$og" ]] && continue
-
-    fasta="${ALIGN_DIR}/${og}.aln.fa"
-    tree="${TREE_DIR}/${og}.treefile"
-
-    if [[ ! -f "$fasta" ]]; then
-        echo "WARNING: Missing alignment: $fasta" >&2
-        ((N_MISSING+=1))
-        continue
-    fi
-
-    if [[ ! -f "$tree" ]]; then
-        echo "WARNING: Missing tree: $tree" >&2
-        ((N_MISSING+=1))
-        continue
-    fi
-
-    printf "%s\t%s\n" "$fasta" "$tree" >> "$MANIFEST"
-    ((N_INPUT+=1))
-
-done < "$ORTHOGROUP_LIST"
-
-echo "Valid orthogroups in manifest: $N_INPUT"
-echo "Missing inputs:                $N_MISSING"
-echo
-
-############################
-# Run OrthoSNAP
-############################
-
-orthosnap \
-    --manifest "$MANIFEST" \
-    --occupancy-count "$N_SPECIES" \
-    --structured-output \
-    -op "$OUTPUT_DIR"
-
-############################
-# Summary
-############################
-
-echo
-echo "OrthoSNAP pruning finished"
-echo "Input orthogroups: $N_INPUT"
-echo "End time:          $(date "+%Y-%m-%d %H:%M:%S")"
-
-deactivate
-
-clean_scratch
-
-```
 

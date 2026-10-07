@@ -2,7 +2,7 @@
 
 #!/bin/bash
 #PBS -N mafft_orthogroups
-#PBS -l select=1:ncpus=16:mem=8gb:scratch_local=10gb
+#PBS -l select=1:ncpus=16:mem=2gb:scratch_local=10gb
 #PBS -l walltime=1:00:00
 #PBS -m ae
 
@@ -13,7 +13,7 @@ set -euo pipefail
 ############################
 
 # Directory with OrthoFinder orthogroup FASTA files
-INPUT_DIR="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree/input_orthogroups/renamed_fastas"
+INPUT_DIR="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree/input_orthogroups/random_single_copy_fastas"
 
 # File containing selected orthogroup IDs, one per line
 ORTHOGROUP_LIST="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree/input_orthogroups/complete_orthogroups_max30.ids.txt"
