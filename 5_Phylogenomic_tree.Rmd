@@ -691,3 +691,208 @@ done
 ```
 
 
+# Tree pruning with OrthoSNAP
+
+## Testing
+```{sh}
+cd /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree
+
+# Directory with MAFFT alignments
+ALIGN_DIR="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree/mafft_alignments"
+
+# Directory with IQ-TREE gene trees
+TREE_DIR="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree/iqtree_gene_trees"
+
+# File containing selected orthogroup IDs
+ORTHOGROUP_LIST="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree/input_orthogroups/complete_orthogroups_max30.ids.txt"
+
+# Output directory
+OUTPUT_DIR="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree/orthosnap_testing"
+
+# OrthoSNAP virtual environment
+ORTHOSNAP_ENV="/storage/brno12-cerit/home/duchmil/SW/orthosnap_env"
+
+# Number of species required in retained SNAP-OGs
+N_SPECIES=23
+
+
+module load python
+source "${ORTHOSNAP_ENV}/bin/activate"
+
+mkdir -p "$OUTPUT_DIR"
+
+
+MANIFEST="${OUTPUT_DIR}/orthosnap_manifest_test.tsv"
+
+printf "fasta\ttree\n" > "$MANIFEST"
+
+N_INPUT=0
+N_MISSING=0
+
+while read -r og; do
+
+    og="${og//$'\r'/}"
+    [[ -z "$og" ]] && continue
+
+    fasta="${ALIGN_DIR}/${og}.aln.fa"
+    tree="${TREE_DIR}/${og}.treefile"
+
+    if [[ ! -f "$fasta" ]]; then
+        echo "WARNING: Missing alignment: $fasta" >&2
+        ((N_MISSING+=1))
+        continue
+    fi
+
+    if [[ ! -f "$tree" ]]; then
+        echo "WARNING: Missing tree: $tree" >&2
+        ((N_MISSING+=1))
+        continue
+    fi
+
+    printf "%s\t%s\n" "$fasta" "$tree" >> "$MANIFEST"
+    ((N_INPUT+=1))
+
+done < <(head -n 10 "$ORTHOGROUP_LIST")
+
+echo "Valid orthogroups in manifest: $N_INPUT"
+echo "Missing inputs:                $N_MISSING"
+echo
+
+############################
+# Run OrthoSNAP
+############################
+
+orthosnap \
+    --manifest "$MANIFEST" \
+    --occupancy-count "$N_SPECIES" \
+    --support 0 \
+    --structured-output \
+    -op "$OUTPUT_DIR"
+    
+orthosnap \
+    --manifest "$MANIFEST" \
+    --support 0 \
+    --structured-output \
+    -op "$OUTPUT_DIR" \
+    --plot_snap_ogs
+    
+```
+
+
+```{sh}
+#!/bin/bash
+#PBS -N orthosnap_pruning
+#PBS -l select=1:ncpus=8:mem=32gb:scratch_local=10gb
+#PBS -l walltime=24:00:00
+#PBS -m ae
+
+set -euo pipefail
+
+############################
+# User-defined variables
+############################
+
+# Directory with MAFFT alignments
+ALIGN_DIR="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree/mafft_alignments"
+
+# Directory with IQ-TREE gene trees
+TREE_DIR="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree/iqtree_gene_trees"
+
+# File containing selected orthogroup IDs
+ORTHOGROUP_LIST="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree/input_orthogroups/complete_orthogroups_max30.ids.txt"
+
+# Output directory
+OUTPUT_DIR="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree/orthosnap_pruned_trees"
+
+# OrthoSNAP virtual environment
+ORTHOSNAP_ENV="/storage/brno12-cerit/home/duchmil/SW/orthosnap_env"
+
+# Number of species required in retained SNAP-OGs
+N_SPECIES=23
+
+############################
+# Environment
+############################
+
+module load python
+source "${ORTHOSNAP_ENV}/bin/activate"
+
+mkdir -p "$OUTPUT_DIR"
+
+echo "Starting OrthoSNAP pruning"
+echo "Alignment directory: $ALIGN_DIR"
+echo "Tree directory:      $TREE_DIR"
+echo "Orthogroup list:     $ORTHOGROUP_LIST"
+echo "Output directory:    $OUTPUT_DIR"
+echo "Required species:    $N_SPECIES"
+echo "Start time:          $(date "+%Y-%m-%d %H:%M:%S")"
+echo
+echo "OrthoSNAP version:"
+orthosnap --version 2>&1
+echo
+
+############################
+# Create manifest
+############################
+
+MANIFEST="${SCRATCHDIR}/orthosnap_manifest.tsv"
+
+printf "fasta\ttree\n" > "$MANIFEST"
+
+N_INPUT=0
+N_MISSING=0
+
+while read -r og; do
+
+    og="${og//$'\r'/}"
+    [[ -z "$og" ]] && continue
+
+    fasta="${ALIGN_DIR}/${og}.aln.fa"
+    tree="${TREE_DIR}/${og}.treefile"
+
+    if [[ ! -f "$fasta" ]]; then
+        echo "WARNING: Missing alignment: $fasta" >&2
+        ((N_MISSING+=1))
+        continue
+    fi
+
+    if [[ ! -f "$tree" ]]; then
+        echo "WARNING: Missing tree: $tree" >&2
+        ((N_MISSING+=1))
+        continue
+    fi
+
+    printf "%s\t%s\n" "$fasta" "$tree" >> "$MANIFEST"
+    ((N_INPUT+=1))
+
+done < "$ORTHOGROUP_LIST"
+
+echo "Valid orthogroups in manifest: $N_INPUT"
+echo "Missing inputs:                $N_MISSING"
+echo
+
+############################
+# Run OrthoSNAP
+############################
+
+orthosnap \
+    --manifest "$MANIFEST" \
+    --occupancy-count "$N_SPECIES" \
+    --structured-output \
+    -op "$OUTPUT_DIR"
+
+############################
+# Summary
+############################
+
+echo
+echo "OrthoSNAP pruning finished"
+echo "Input orthogroups: $N_INPUT"
+echo "End time:          $(date "+%Y-%m-%d %H:%M:%S")"
+
+deactivate
+
+clean_scratch
+
+```
+

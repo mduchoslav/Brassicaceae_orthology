@@ -114,3 +114,41 @@ module load mafft
 mafft --version
 # v7.520 (2023/Mar/22)
 ```
+
+## IQ-TREE
+
+I used module installed on Metacentrum.
+
+```{sh}
+# load module
+module load iqtree
+
+# version
+iqtree3-mpi --version
+# IQ-TREE MPI version 3.0.1 for Linux x86 64-bit built Sep 16 2025
+# Developed by Bui Quang Minh, Thomas Wong, Nhan Ly-Trong, Huaiyan Ren
+# Contributed by Lam-Tung Nguyen, Dominik Schrempf, Chris Bielow,
+# Olga Chernomor, Michael Woodhams, Diep Thi Hoang, Heiko Schmidt
+```
+
+## OrthoSNAP
+
+Version: 1.7.0
+Citation: Steenwyk et al. (2022), PLOS Biology.
+DOI: 10.1371/journal.pbio.3001827
+https://journals.plos.org/plosbiology/article?id=10.1371/journal.pbio.3001827
+
+```{sh}
+module load python # at least Python 3.9 is needed
+
+python3 -m venv /storage/brno12-cerit/home/duchmil/SW/orthosnap_env
+source ~/SW/orthosnap_env/bin/activate
+
+pip install orthosnap
+pip install matplotlib # needed for plotting of trees
+
+orthosnap -v
+# orthosnap 1.7.0
+
+deactivate
+```
