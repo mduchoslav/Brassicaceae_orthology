@@ -630,9 +630,519 @@ cd /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/meta
 qsub mafft_orthogroups.bash
 ```
 
-# IQ-TREE calculation of trees for each orthogroup
+# Trimming alignments
 
-Model is selected manually as `-m LG+G4` to get fast calculation.
+It takes just few minutes with 1 CPU, so it is not really needed to submit it as a job.
+
+```{sh}
+#!/bin/bash
+#PBS -N trimal_trim
+#PBS -l select=1:ncpus=32:mem=32gb:scratch_local=10gb
+#PBS -l walltime=12:00:00
+#PBS -m ae
+
+# set -euo pipefail
+
+############################
+# User-defined variables
+############################
+
+# Directory with MAFFT alignments
+INPUT_DIR="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree/mafft_alignments"
+
+# Directory for trimmed alignments
+OUTPUT_DIR="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree/trimmed_alignments"
+
+# Number of parallel trimAl jobs
+NCPU=1
+
+############################
+# Environment
+############################
+
+module load trimal
+
+mkdir -p "$OUTPUT_DIR"
+
+cd "$OUTPUT_DIR"
+
+echo "Starting trimAl trimming"
+echo "Input directory:    $INPUT_DIR"
+echo "Output directory:   $OUTPUT_DIR"
+echo "Parallel jobs:      $NCPU"
+echo "Start time:         $(date "+%Y-%m-%d %H:%M:%S")"
+echo
+
+############################
+# Trimming function
+############################
+
+trim_one() {
+
+    infile="$1"
+
+    filename=$(basename "$infile")
+    og="${filename%.aln.fa}"
+
+    outfile="${OUTPUT_DIR}/${og}.trim.fa"
+
+    # Skip already completed trimming
+    if [[ -s "$outfile" ]]; then
+        echo "Skipping existing alignment: $og"
+        return
+    fi
+
+    echo "Trimming: $og"
+
+    trimal \
+        -in "$infile" \
+        -out "$outfile" \
+        -automated1
+}
+
+export -f trim_one
+export OUTPUT_DIR
+
+############################
+# Run alignments in parallel
+############################
+
+find "$INPUT_DIR" \
+    -maxdepth 1 \
+    -type f \
+    -name "*.aln.fa" \
+    -print0 |
+    xargs -0 -n 1 -P "$NCPU" bash -c 'trim_one "$1"' _
+
+############################
+# Summary
+############################
+
+N_INPUT=$(find "$INPUT_DIR" \
+    -maxdepth 1 \
+    -type f \
+    -name "*.aln.fa" |
+    wc -l)
+
+N_OUTPUT=$(find "$OUTPUT_DIR" \
+    -maxdepth 1 \
+    -type f \
+    -name "*.trim.fa" \
+    -size +0c |
+    wc -l)
+
+echo
+echo "trimAl trimming finished"
+echo "Input alignments:   $N_INPUT"
+echo "Trimmed alignments: $N_OUTPUT"
+echo "End time:           $(date "+%Y-%m-%d %H:%M:%S")"
+
+# clean_scratch
+```
+
+# Modify sequence names
+Leave just sepcies in sequence names, otherwise it will not be well concatenated by IQ-TREE.
+ 
+```{sh}
+cd /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree/trimmed_alignments
+
+mkdir -p ../trimmed_alignments_2
+
+for f in *.trim.fa; do
+    sed -E 's/^>([^|]+)\|.*/>\1/' "$f" > "../trimmed_alignments_2/${f%.trim.fa}.species.trim.fa"
+done
+
+```
+ 
+
+# Concatenation
+
+```{sh}
+# use interactive job
+qsub -I -l select=1:ncpus=1:mem=20gb:scratch_local=40gb -l walltime=2:00:00
+
+cd /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree
+
+mkdir -p concatenated_alignment
+
+cd /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree/concatenated_alignment
+
+
+############################
+# User-defined variables
+############################
+
+# Directory with trimmed alignments
+INPUT_DIR="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree/trimmed_alignments"
+
+# Output files
+CONCAT_FASTA="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree/concatenated_alignment/concatenated_alignment.fa"
+PARTITION_FILE="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree/concatenated_alignment/partitions.txt"
+
+############################
+# Temporary files
+############################
+
+TMP_DIR=temp_dir
+
+mkdir -p $TMP_DIR
+
+# trap 'rm -rf "$TMP_DIR"' EXIT
+
+############################
+# Initialize
+############################
+
+> "$CONCAT_FASTA"
+> "$PARTITION_FILE"
+
+POSITION=1
+N_LOCI=0
+
+echo "Starting concatenation"
+echo "Input directory:  $INPUT_DIR"
+echo "Concatenated file: $CONCAT_FASTA"
+echo "Partition file:    $PARTITION_FILE"
+echo
+
+############################
+# Process alignments
+############################
+
+for infile in $(find "$INPUT_DIR" \
+    -maxdepth 1 \
+    -type f \
+    -name "*.trim.fa" \
+    | sort); do
+
+    filename=$(basename "$infile")
+    og="${filename%.trim.fa}"
+
+    echo "Processing: $og"
+
+    ############################
+    # Convert FASTA to:
+    # species<TAB>sequence
+    ############################
+
+    locus_tmp="${TMP_DIR}/${og}.tsv"
+
+    awk '
+    /^>/ {
+        if (header != "") {
+            split(header, x, "|")
+            print x[1] "\t" seq
+        }
+
+        header = substr($0, 2)
+        seq = ""
+        next
+    }
+
+    {
+        seq = seq $0
+    }
+
+    END {
+        if (header != "") {
+            split(header, x, "|")
+            print x[1] "\t" seq
+        }
+    }
+    ' "$infile" > "$locus_tmp"
+
+    ############################
+    # Check alignment length
+    ############################
+
+    LENGTH=$(awk '
+        NR == 1 { print length($2) }
+    ' "$locus_tmp")
+
+    if [[ -z "$LENGTH" || "$LENGTH" -eq 0 ]]; then
+        echo "WARNING: Empty alignment: $infile" >&2
+        continue
+    fi
+
+    # Check that all sequences have the same length
+    N_LENGTHS=$(awk '{print length($2)}' "$locus_tmp" | sort -u | wc -l)
+
+    if [[ "$N_LENGTHS" -ne 1 ]]; then
+        echo "ERROR: Sequences have different lengths in $infile" >&2
+        exit 1
+    fi
+
+    ############################
+    # First locus:
+    # initialize concatenated sequences
+    ############################
+
+    if [[ "$N_LOCI" -eq 0 ]]; then
+
+        cp "$locus_tmp" "${TMP_DIR}/concatenated.tsv"
+
+        # Save reference species list
+        cut -f1 "$locus_tmp" | sort > "${TMP_DIR}/species_reference.txt"
+
+    else
+
+        ############################
+        # Verify species composition
+        ############################
+
+        cut -f1 "$locus_tmp" | sort > "${TMP_DIR}/species_current.txt"
+
+        if ! cmp -s \
+            "${TMP_DIR}/species_reference.txt" \
+            "${TMP_DIR}/species_current.txt"; then
+
+            echo "ERROR: Species composition differs in $og" >&2
+
+            echo "Missing or additional species:" >&2
+            diff \
+                "${TMP_DIR}/species_reference.txt" \
+                "${TMP_DIR}/species_current.txt" >&2 || true
+
+            exit 1
+        fi
+
+        ############################
+        # Append locus by species
+        ############################
+
+        awk '
+        BEGIN {
+            FS = OFS = "\t"
+        }
+
+        NR == FNR {
+            seq[$1] = $2
+            next
+        }
+
+        {
+            if (!($1 in seq)) {
+                print "ERROR: Species missing: " $1 > "/dev/stderr"
+                exit 1
+            }
+
+            print $1, $2 seq[$1]
+        }
+        ' "$locus_tmp" "${TMP_DIR}/concatenated.tsv" \
+            > "${TMP_DIR}/concatenated.new.tsv"
+
+        mv \
+            "${TMP_DIR}/concatenated.new.tsv" \
+            "${TMP_DIR}/concatenated.tsv"
+    fi
+
+    ############################
+    # Add partition coordinates
+    ############################
+
+    END_POSITION=$(( POSITION + LENGTH - 1 ))
+
+    printf "AA, %s = %d-%d\n" \
+        "$og" \
+        "$POSITION" \
+        "$END_POSITION" \
+        >> "$PARTITION_FILE"
+
+    POSITION=$(( END_POSITION + 1 ))
+
+    ((N_LOCI+=1))
+
+done
+
+############################
+# Write concatenated FASTA
+############################
+
+awk '
+BEGIN {
+    FS = "\t"
+}
+
+{
+    print ">" $1
+    print $2
+}
+' "${TMP_DIR}/concatenated.tsv" > "$CONCAT_FASTA"
+
+############################
+# Summary
+############################
+
+N_SPECIES=$(grep -c '^>' "$CONCAT_FASTA")
+TOTAL_LENGTH=$(( POSITION - 1 ))
+
+echo
+echo "Concatenation finished"
+echo "Number of loci:    $N_LOCI"
+echo "Number of species: $N_SPECIES"
+echo "Total length:      $TOTAL_LENGTH aa"
+echo
+echo "Output files:"
+echo "  $CONCAT_FASTA"
+echo "  $PARTITION_FILE"
+```
+
+
+
+# IQ-TREE calculation of tree for concatenated fasta
+
+## Testing
+
+
+```{sh}
+cd /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree
+mkdir trimmed_alignments_test
+# copy just few files
+cp -t trimmed_alignments_test trimmed_alignments/OG00096*
+
+
+############################
+# User-defined variables
+############################
+
+# Directory with trimmed locus alignments
+ALIGN_DIR="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree/trimmed_alignments_test"
+
+# Output directory
+OUTPUT_DIR="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree/iqtree_species_tree_test"
+
+# Output prefix
+PREFIX="brassicaceae_species_tree"
+
+# Number of CPUs
+NCPU=1
+
+############################
+# Environment
+############################
+
+module load iqtree
+
+mkdir -p "$OUTPUT_DIR"
+cd "$OUTPUT_DIR"
+
+echo "Starting IQ-TREE species tree inference"
+echo "Alignment directory: $ALIGN_DIR"
+echo "Output directory:    $OUTPUT_DIR"
+echo "CPUs:                $NCPU"
+echo "Start time:          $(date "+%Y-%m-%d %H:%M:%S")"
+echo
+echo "IQ-TREE version:"
+iqtree3-mpi --version 2>&1
+echo
+
+############################
+# Run IQ-TREE
+############################
+
+iqtree3-mpi \
+    -p "$ALIGN_DIR" \
+    -m MFP+MERGE \
+    -rcluster 10 \
+    -B 1000 \
+    -alrt 1000 \
+    -T "$NCPU" \
+    --prefix "${OUTPUT_DIR}/${PREFIX}"
+
+############################
+# Summary
+############################
+
+echo
+echo "IQ-TREE analysis finished"
+echo "End time: $(date "+%Y-%m-%d %H:%M:%S")"
+echo
+echo "Main output tree:"
+echo "  ${OUTPUT_DIR}/${PREFIX}.treefile"
+```
+
+## Running IQ-TREE
+
+```{sh}
+### Metacentrum script
+
+#!/bin/bash
+#PBS -N iqtree_species_tree
+#PBS -l select=1:ncpus=32:mem=128gb:scratch_local=20gb
+#PBS -l walltime=48:00:00
+#PBS -m ae
+
+set -euo pipefail
+
+############################
+# User-defined variables
+############################
+
+# Directory with trimmed locus alignments
+ALIGN_DIR="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree/trimmed_alignments_2"
+
+# Output directory
+OUTPUT_DIR="/storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree/iqtree_species_tree"
+
+# Output prefix
+PREFIX="brassicaceae_species_tree"
+
+# Number of CPUs
+NCPU=32
+
+############################
+# Environment
+############################
+
+module load iqtree
+
+mkdir -p "$OUTPUT_DIR"
+cd "$OUTPUT_DIR"
+
+echo "Starting IQ-TREE species tree inference"
+echo "Alignment directory: $ALIGN_DIR"
+echo "Output directory:    $OUTPUT_DIR"
+echo "CPUs:                $NCPU"
+echo "Start time:          $(date "+%Y-%m-%d %H:%M:%S")"
+echo
+echo "IQ-TREE version:"
+iqtree3-mpi --version 2>&1
+echo
+
+############################
+# Run IQ-TREE
+############################
+
+iqtree3-mpi \
+    -p "$ALIGN_DIR" \
+    -m MFP+MERGE \
+    -rcluster 10 \
+    -B 1000 \
+    -alrt 1000 \
+    -T "$NCPU" \
+    --prefix "${OUTPUT_DIR}/${PREFIX}"
+
+############################
+# Summary
+############################
+
+echo
+echo "IQ-TREE analysis finished"
+echo "End time: $(date "+%Y-%m-%d %H:%M:%S")"
+echo
+echo "Main output tree:"
+echo "  ${OUTPUT_DIR}/${PREFIX}.treefile"
+
+clean_scratch
+```
+
+```{sh}
+cd /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/metacentrum_scripts
+qsub iqtree_species_tree.bash
+```
+
+## IQ tree old
+
 
 ```{sh}
 ### Metacentrum script
