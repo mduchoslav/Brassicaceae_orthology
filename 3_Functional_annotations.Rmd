@@ -559,6 +559,71 @@ for(i in seq_along(g.input)) {
 
 ```
 
+## Exploring peaks of high gene density in *Aethionema*
+
+There are peaks of high density of genes on scaffolds 1 and 7 in *Aethionema*. Here I will identify them and check in the annotation files their support and what could be inside them.
+
+```{r}
+setwd("D:/!ecolgen/Brassicaceae_orthology/brassicaceae_3/")
+if(!exists("old.par")) old.par<-par(no.readonly = T)
+
+one.species <- "Aethionema_saxatile"
+
+# read RDS
+annotations.5 <- readRDS(file = paste0("functional_annotation/5_full_with_support_for_my_annotations_rds/", 
+																			 one.species, 
+																			 "_support_and_At_orthologues_and_functional_annotations.rds"))
+
+colnames(annotations.5)
+
+# read annotation
+gff <- read.table(file = gzfile("D:/!ecolgen/annotations/Aethionema_saxatile_2025_06/final_files/Aethionema_saxatile_CUNI_V1_annotation_v1.0.gff.gz"), sep = "\t")
+gff.genes <- gff[gff$V3 == "gene", ]
+gff.genes$gene <- gsub(pattern = "ID=", replacement = "", x = gff.genes$V9)
+
+annotations.6 <- merge(x = annotations.5, y = gff.genes, by.x = one.species, by.y = "gene")
+
+colnames(annotations.6)
+
+## scaffold 1
+scaff1 <- annotations.6[annotations.6$V1 == "scaffold_1", ]
+
+summary(scaff1$V4)
+
+# plot rank of the gene against position
+plot(x = 1:nrow(scaff1), y = scaff1$V4)
+plot(x = 1:nrow(scaff1), y = scaff1$V4, ylim = c(0.9e7, 1.3e7), xlim = c(500, 1000))
+# the strange genes are between 10 Mbp and 11 Mbp
+
+sel.scaff1 <- scaff1[scaff1$V4 > 9e6 & scaff1$V4 < 1.3e7, ]
+
+## scaffold 7
+scaff7 <- annotations.6[annotations.6$V1 == "scaffold_7", ]
+
+summary(scaff7$V4)
+
+# plot rank of the gene against position
+plot(x = 1:nrow(scaff7), y = scaff7$V4)
+plot(x = 1:nrow(scaff7), y = scaff7$V4, ylim = c(2e7, 2.5e7), xlim = c(1300, 2400))
+plot(x = 1:nrow(scaff7), y = scaff7$V4, ylim = c(2.2e7, 2.35e7), xlim = c(1300, 2400))
+# the strange genes are between 22 Mbp and 23.5 Mbp
+
+sel.scaff7 <- scaff7[scaff7$V4 > 2.2e7 & scaff7$V4 < 2.35e7, ]
+
+# similar plot with colour coded support of genes
+plot(x = 1:nrow(scaff7), y = scaff7$V4, col = c("green", "blue", "violet", "red")[rowSums(scaff7[, 3:6])+1])
+```
+
+**Scaffold 1**
+
+There is a cluster of ~250 short (mostly 124 amino acids) and very similar genes between 10 Mbp and 11 Mbp on scaffold 1. They are probably annotated genes in transposible elements. They have no support and the sequence is similar to site-specific recombinase (integrase).
+
+**Scaffold 7**
+
+There is a cluster of ~900 short genes between 22 Mbp and 23.5 Mbp on scaffold 7. They are similar, but there are several variants of them (length 86-138 amino acids). They are probably annotated genes in transposible elements, they have no annotation and no support.
+
+
+
 
 # Description of output tables
 

@@ -19,6 +19,8 @@ Miloš Duchoslav
     sources](#compilation-of-annotations-from-several-sources)
 - [Adding reliability table for species annotated by
   me](#adding-reliability-table-for-species-annotated-by-me)
+  - [Exploring peaks of high gene density in
+    *Aethionema*](#exploring-peaks-of-high-gene-density-in-aethionema)
 - [Description of output tables](#description-of-output-tables)
   - [Explanation of columns in the output
     tables](#explanation-of-columns-in-the-output-tables)
@@ -575,6 +577,77 @@ for(i in seq_along(g.input)) {
 }
 ```
 
+## Exploring peaks of high gene density in *Aethionema*
+
+There are peaks of high density of genes on scaffolds 1 and 7 in
+*Aethionema*. Here I will identify them and check in the annotation
+files their support and what could be inside them.
+
+``` r
+setwd("D:/!ecolgen/Brassicaceae_orthology/brassicaceae_3/")
+if(!exists("old.par")) old.par<-par(no.readonly = T)
+
+one.species <- "Aethionema_saxatile"
+
+# read RDS
+annotations.5 <- readRDS(file = paste0("functional_annotation/5_full_with_support_for_my_annotations_rds/", 
+                                                                             one.species, 
+                                                                             "_support_and_At_orthologues_and_functional_annotations.rds"))
+
+colnames(annotations.5)
+
+# read annotation
+gff <- read.table(file = gzfile("D:/!ecolgen/annotations/Aethionema_saxatile_2025_06/final_files/Aethionema_saxatile_CUNI_V1_annotation_v1.0.gff.gz"), sep = "\t")
+gff.genes <- gff[gff$V3 == "gene", ]
+gff.genes$gene <- gsub(pattern = "ID=", replacement = "", x = gff.genes$V9)
+
+annotations.6 <- merge(x = annotations.5, y = gff.genes, by.x = one.species, by.y = "gene")
+
+colnames(annotations.6)
+
+## scaffold 1
+scaff1 <- annotations.6[annotations.6$V1 == "scaffold_1", ]
+
+summary(scaff1$V4)
+
+# plot rank of the gene against position
+plot(x = 1:nrow(scaff1), y = scaff1$V4)
+plot(x = 1:nrow(scaff1), y = scaff1$V4, ylim = c(0.9e7, 1.3e7), xlim = c(500, 1000))
+# the strange genes are between 10 Mbp and 11 Mbp
+
+sel.scaff1 <- scaff1[scaff1$V4 > 9e6 & scaff1$V4 < 1.3e7, ]
+
+## scaffold 7
+scaff7 <- annotations.6[annotations.6$V1 == "scaffold_7", ]
+
+summary(scaff7$V4)
+
+# plot rank of the gene against position
+plot(x = 1:nrow(scaff7), y = scaff7$V4)
+plot(x = 1:nrow(scaff7), y = scaff7$V4, ylim = c(2e7, 2.5e7), xlim = c(1300, 2400))
+plot(x = 1:nrow(scaff7), y = scaff7$V4, ylim = c(2.2e7, 2.35e7), xlim = c(1300, 2400))
+# the strange genes are between 22 Mbp and 23.5 Mbp
+
+sel.scaff7 <- scaff7[scaff7$V4 > 2.2e7 & scaff7$V4 < 2.35e7, ]
+
+# similar plot with colour coded support of genes
+plot(x = 1:nrow(scaff7), y = scaff7$V4, col = c("green", "blue", "violet", "red")[rowSums(scaff7[, 3:6])+1])
+```
+
+**Scaffold 1**
+
+There is a cluster of ~250 short (mostly 124 amino acids) and very
+similar genes between 10 Mbp and 11 Mbp on scaffold 1. They are probably
+annotated genes in transposible elements. They have no support and the
+sequence is similar to site-specific recombinase (integrase).
+
+**Scaffold 7**
+
+There is a cluster of ~900 short genes between 22 Mbp and 23.5 Mbp on
+scaffold 7. They are similar, but there are several variants of them
+(length 86-138 amino acids). They are probably annotated genes in
+transposible elements, they have no annotation and no support.
+
 # Description of output tables
 
 There are several versions of tables (with different subsets of columns)
@@ -609,31 +682,31 @@ Columns:
 
 - **Main columns**
   - `Species_name` (e.g. `Arabidopsis_arenosa`): Gene IDs of the
-    investigated species.  
+    investigated species.\
   - `prot_length`: Length of protein sequence of the longest/primary
-    isoform used for OrthoFinder.  
+    isoform used for OrthoFinder.\
   - `Arabidopsis_thaliana`: Selected *A. thaliana* orthologues according
-    to these rules:  
-    1. Use orthologues from orthologues table.  
-    2. If missing, use Blast RBH.  
-    3. If missing, use genes from N0 hierarchical orthogroups.  
-    4. If missing, use genes from broad orthogroups.  
+    to these rules:\
+    1. Use orthologues from orthologues table.\
+    2. If missing, use Blast RBH.\
+    3. If missing, use genes from N0 hierarchical orthogroups.\
+    4. If missing, use genes from broad orthogroups.\
     5. If missing, use genes hits from simple Blast (but only those with
-    BLAST_pident \> 40 & BLAST_qcovhsp \> 50)  
-    BLAST_pident: Percentage of identical matches (in local alignment)  
-    BLAST_qcovhsp: Query coverage per HSP (%)  
-    HSP = High-scoring Segment Pair (local alignment with no gaps)  
+    BLAST_pident \> 40 & BLAST_qcovhsp \> 50)\
+    BLAST_pident: Percentage of identical matches (in local alignment)\
+    BLAST_qcovhsp: Query coverage per HSP (%)\
+    HSP = High-scoring Segment Pair (local alignment with no gaps)\
   - `single_Arabidopsis_thaliana`: Selected *A. thaliana* orthologue
-    (only one) according to these rules:  
+    (only one) according to these rules:\
     1. If there is only one *A. thaliana* gene in column
-    `Arabidopsis_thaliana`, use that one.  
+    `Arabidopsis_thaliana`, use that one.\
     2. Else, if there is one and only RBH and it is among genes in
-    column `Arabidopsis_thaliana`, take the RBH.  
+    column `Arabidopsis_thaliana`, take the RBH.\
     3. Else, take the gene from the column `Arabidopsis_thaliana` that
     had the highest bitscore in the simple BLAST results. If several
-    have the highest bitscore, take the first.  
+    have the highest bitscore, take the first.\
     4. If the genes in column `Arabidopsis_thaliana` are not among BLAST
-    hits, take nothing.  
+    hits, take nothing.\
     `Recommendation`: It is appealing to use the “single” orthologues
     (`single_Arabidopsis_thaliana`), because it makes things easier.
     However, I recommend to do that only in cases when it is absolutely
@@ -644,129 +717,129 @@ Columns:
     GitHub](https://github.com/davidemms/OrthoFinder)). The column
     `Arabidopsis_thaliana` should better reflect the real biology.
   - `homologue_type`: Type of selected *A. thaliana* orthologues in
-    `Arabidopsis_thaliana` column.  
+    `Arabidopsis_thaliana` column.\
     - *orthologue* - orthologue from OrthoFinder orthologues table
-    (method 1)  
-    - *other* - homologue assigned by other method (2-5)  
+    (method 1)\
+    - *other* - homologue assigned by other method (2-5)\
   - `GO_term_IDs`: Gene ontology term IDs compiled from columns
-    `TAIR_GO`, `UniProt_Gene.Ontology.IDs` and `InterProScan_GO_term`.  
+    `TAIR_GO`, `UniProt_Gene.Ontology.IDs` and `InterProScan_GO_term`.\
 - **OrthoFinder\_\[…\]**: Results from OrthoFinder.
   - `OrthoFinder_OL_Arabidopsis_thaliana` - *A. thaliana* orthologues
-    from OrthoFinder orthologues table.  
+    from OrthoFinder orthologues table.\
   - `OrthoFinder_N0_HOG` - N0 orthogroup ID from OrthoFinder N0
-    hierarchical orthogroups table.  
+    hierarchical orthogroups table.\
   - `OrthoFinder_N0_Arabidopsis_thaliana` - *A. thaliana*
     orthologues/homologues from OrthoFinder N0 hierarchical orthogroups
-    table.  
+    table.\
   - `OrthoFinder_OG_Orthogroup` - Orthogroup ID from OrthoFinder
-    orthogroups table.  
+    orthogroups table.\
   - `OrthoFinder_OG_Arabidopsis_thaliana` - *A. thaliana*
-    orthologues/homologues from OrthoFinder orthogroups table.  
+    orthologues/homologues from OrthoFinder orthogroups table.\
 - **RBH\_\[…\]**: Results of Reciprocal best hit (RBH) BLAST.
-  - `RBH_B_id` - ID from species B (*A. thaliana*)  
+  - `RBH_B_id` - ID from species B (*A. thaliana*)\
   - `RBH_A_length` - Length of protein sequence of the investigated (A)
-    species (unfortunately including `*` in the end)  
+    species (unfortunately including `*` in the end)\
   - `RBH_B_length` - Length of *A. thaliana* (species B) hit protein
-    sequence (unfortunately including `*` in the end)  
+    sequence (unfortunately including `*` in the end)\
   - `RBH_A_qcovhsp` - Percentage of sequence A covered by alignment
-    (investigated species)  
+    (investigated species)\
   - `RBH_B_qcovhsp` - Percentage of sequence B covered by alignment (*A.
-    thaliana*)  
-  - `RBH_length` - HSP alignment length  
-  - `RBH_pident` - HSP percentage identity  
-  - `RBH_bitscore` - HSP bitscore  
+    thaliana*)\
+  - `RBH_length` - HSP alignment length\
+  - `RBH_pident` - HSP percentage identity\
+  - `RBH_bitscore` - HSP bitscore\
 - **BLAST\_\[…\]**: Results for highest-scoring hit of simple BLAST
   (investigated species against *A. thaliana* protein data
   - `BLAST_qaccver` - Query (investigated species) accession and
-    version  
-  - `BLAST_saccver` - Subject (*A. thaliana*) accession and version  
-  - `BLAST_pident` - Percentage of identical matches  
-  - `BLAST_length` - Alignment length  
-  - `BLAST_mismatch` - Number of mismatches  
-  - `BLAST_gapopen` - Number of gap openings  
-  - `BLAST_qstart` - Start of alignment in query  
-  - `BLAST_qend` - End of alignment in query  
-  - `BLAST_sstart` - Start of alignment in subject (database hit)  
-  - `BLAST_send` - End of alignment in subject (database hit)  
-  - `BLAST_evalue` - Expectation value (E-value)  
-  - `BLAST_bitscore` - Bit score  
-  - `BLAST_qcovhsp` - Query coverage per HSP (alignment) \[%\]  
-  - `BLAST_qlen` - Query sequence length  
+    version\
+  - `BLAST_saccver` - Subject (*A. thaliana*) accession and version\
+  - `BLAST_pident` - Percentage of identical matches\
+  - `BLAST_length` - Alignment length\
+  - `BLAST_mismatch` - Number of mismatches\
+  - `BLAST_gapopen` - Number of gap openings\
+  - `BLAST_qstart` - Start of alignment in query\
+  - `BLAST_qend` - End of alignment in query\
+  - `BLAST_sstart` - Start of alignment in subject (database hit)\
+  - `BLAST_send` - End of alignment in subject (database hit)\
+  - `BLAST_evalue` - Expectation value (E-value)\
+  - `BLAST_bitscore` - Bit score\
+  - `BLAST_qcovhsp` - Query coverage per HSP (alignment) \[%\]\
+  - `BLAST_qlen` - Query sequence length\
   - `BLAST_slen` - Subject sequence length
 - **TAIR\_\[…\]**: Functional annotations obtained from TAIR
   ([arabidopsis.org](https://www.arabidopsis.org/)) compiled for *A.
   thaliana* homologues in `Arabidopsis_thaliana` column.
-  - `TAIR_symbol`  
-  - `TAIR_full_name`  
-  - `TAIR_subcellular.prediction`  
-  - `TAIR_gene_model_type`  
-  - `TAIR_short_description`  
-  - `TAIR_Curator_summary`  
-  - `TAIR_Computational_description`  
+  - `TAIR_symbol`\
+  - `TAIR_full_name`\
+  - `TAIR_subcellular.prediction`\
+  - `TAIR_gene_model_type`\
+  - `TAIR_short_description`\
+  - `TAIR_Curator_summary`\
+  - `TAIR_Computational_description`\
   - `TAIR_GO`
 - **PlantCyc_pathway**: Metabolic pathways obtained from
   [plantcyc.org](https://plantcyc.org/) compiled for *A. thaliana*
   homologues in `Arabidopsis_thaliana` column.
-  - `PlantCyc_pathway`  
+  - `PlantCyc_pathway`\
 - **TAIR\_\[…\]**: Annotations obtained from
   [UniProt](https://www.uniprot.org/uniprot/?query=proteome%3Aup000006548)
   compiled for *A. thaliana* homologues in `Arabidopsis_thaliana`
   column.
-  - `UniProt_Entry`  
-  - `UniProt_Entry.Name`  
-  - `UniProt_Protein.names`  
-  - `UniProt_Gene.Names`  
-  - `UniProt_Length`  
-  - `UniProt_Gene.Names..ordered.locus.`  
-  - `UniProt_Gene.Names..primary.`  
-  - `UniProt_Gene.Names..synonym.`  
-  - `UniProt_Pathway`  
-  - `UniProt_Cofactor`  
-  - `UniProt_DNA.binding`  
-  - `UniProt_Binding.site`  
-  - `UniProt_Active.site`  
-  - `UniProt_Protein.existence`  
-  - `UniProt_Keywords`  
-  - `UniProt_Interacts.with`  
-  - `UniProt_Developmental.stage`  
-  - `UniProt_Induction`  
-  - `UniProt_Tissue.specificity`  
-  - `UniProt_Gene.Ontology..biological.process.`  
-  - `UniProt_Gene.Ontology..GO.`  
-  - `UniProt_Gene.Ontology.IDs`  
-  - `UniProt_Gene.Ontology..molecular.function.`  
-  - `UniProt_Gene.Ontology..cellular.component.`  
-  - `UniProt_Intramembrane`  
-  - `UniProt_Subcellular.location..CC.`  
-  - `UniProt_Topological.domain`  
-  - `UniProt_Transmembrane`  
-  - `UniProt_PROSITE`  
-  - `UniProt_Pfam`  
-  - `UniProt_InterPro`  
-  - `UniProt_Subunit.structure`  
-  - `UniProt_thalemine.link`  
-  - `UniProt_tair.link`  
+  - `UniProt_Entry`\
+  - `UniProt_Entry.Name`\
+  - `UniProt_Protein.names`\
+  - `UniProt_Gene.Names`\
+  - `UniProt_Length`\
+  - `UniProt_Gene.Names..ordered.locus.`\
+  - `UniProt_Gene.Names..primary.`\
+  - `UniProt_Gene.Names..synonym.`\
+  - `UniProt_Pathway`\
+  - `UniProt_Cofactor`\
+  - `UniProt_DNA.binding`\
+  - `UniProt_Binding.site`\
+  - `UniProt_Active.site`\
+  - `UniProt_Protein.existence`\
+  - `UniProt_Keywords`\
+  - `UniProt_Interacts.with`\
+  - `UniProt_Developmental.stage`\
+  - `UniProt_Induction`\
+  - `UniProt_Tissue.specificity`\
+  - `UniProt_Gene.Ontology..biological.process.`\
+  - `UniProt_Gene.Ontology..GO.`\
+  - `UniProt_Gene.Ontology.IDs`\
+  - `UniProt_Gene.Ontology..molecular.function.`\
+  - `UniProt_Gene.Ontology..cellular.component.`\
+  - `UniProt_Intramembrane`\
+  - `UniProt_Subcellular.location..CC.`\
+  - `UniProt_Topological.domain`\
+  - `UniProt_Transmembrane`\
+  - `UniProt_PROSITE`\
+  - `UniProt_Pfam`\
+  - `UniProt_InterPro`\
+  - `UniProt_Subunit.structure`\
+  - `UniProt_thalemine.link`\
+  - `UniProt_tair.link`\
 - **InterProScan\_\[…\]**: Results of InterProScan for protein sequences
   of the given species (NOT *A. thaliana* homologues).
-  - `InterProScan_AntiFam`  
-  - `InterProScan_CDD`  
-  - `InterProScan_Coils`  
-  - `InterProScan_FunFam`  
-  - `InterProScan_Gene3D`  
-  - `InterProScan_Hamap`  
-  - `InterProScan_MobiDBLite`  
-  - `InterProScan_NCBIfam`  
-  - `InterProScan_PANTHER`  
-  - `InterProScan_PIRSF`  
-  - `InterProScan_PRINTS`  
-  - `InterProScan_Pfam`  
-  - `InterProScan_ProSitePatterns`  
-  - `InterProScan_ProSiteProfiles`  
-  - `InterProScan_SFLD`  
-  - `InterProScan_SMART`  
-  - `InterProScan_SUPERFAMILY`  
-  - `InterProScan_interpro`  
-  - `InterProScan_GO_term`  
+  - `InterProScan_AntiFam`\
+  - `InterProScan_CDD`\
+  - `InterProScan_Coils`\
+  - `InterProScan_FunFam`\
+  - `InterProScan_Gene3D`\
+  - `InterProScan_Hamap`\
+  - `InterProScan_MobiDBLite`\
+  - `InterProScan_NCBIfam`\
+  - `InterProScan_PANTHER`\
+  - `InterProScan_PIRSF`\
+  - `InterProScan_PRINTS`\
+  - `InterProScan_Pfam`\
+  - `InterProScan_ProSitePatterns`\
+  - `InterProScan_ProSiteProfiles`\
+  - `InterProScan_SFLD`\
+  - `InterProScan_SMART`\
+  - `InterProScan_SUPERFAMILY`\
+  - `InterProScan_interpro`\
+  - `InterProScan_GO_term`\
   - `InterProScan_pathways`
 
 Extra columns only for genome annotations made by me:
@@ -775,13 +848,13 @@ Extra columns only for genome annotations made by me:
   annotation (1/0)
   - `support_Assembled_transcripts` - Overlap with transcripts assembled
     from RNA-seq used for annotation by StringTie (at least 90 % of gene
-    model)  
+    model)\
   - `support_A.lyrata.pep` - Overlap with *Arabidopsis lyrata* proteins
     aligned to genome using Miniprot (the overlap should be at least 90%
-    of both the gene model and the aligned protein)  
+    of both the gene model and the aligned protein)\
   - `support_A.thaliana.` - Overlap with *Arabidopsis thaliana* proteins
     aligned to genome using Miniprot (the overlap should be at least 90%
-    of both the gene model and the aligned protein)  
+    of both the gene model and the aligned protein)\
   - `support_B.rapa.pep` - Overlap with *Brassica rapa* proteins aligned
     to genome using Miniprot (the overlap should be at least 90% of both
     the gene model and the aligned protein)
