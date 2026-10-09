@@ -1,34 +1,54 @@
----
-title: "Phylogenomic tree"
-author: "Miloš Duchoslav"
-date: "2026-10"
-output:
-  github_document:
-    toc: true
-    toc_depth: 2
-editor_options: 
-  chunk_output_type: console
----
+Phylogenomic tree
+================
+Miloš Duchoslav
+2026-10
 
-```{r setup, include=FALSE}
-# Setting NO evaluation of code chunks as default (needed for knitting of bash code without trying to run that)
-knitr::opts_chunk$set(eval = FALSE)
-```
+- [Introduction](#introduction)
+  - [Strategy](#strategy)
+  - [SW installation and versions](#sw-installation-and-versions)
+- [Data preparation](#data-preparation)
+  - [Script to get distribution of number of orthogroups with different
+    numbers of
+    genes](#script-to-get-distribution-of-number-of-orthogroups-with-different-numbers-of-genes)
+  - [Add species names to protein names in fasta files before
+    alignment](#add-species-names-to-protein-names-in-fasta-files-before-alignment)
+  - [Select random sequence for each species in each
+    orthogroup](#select-random-sequence-for-each-species-in-each-orthogroup)
+- [MAFFT alignment of orthogroups](#mafft-alignment-of-orthogroups)
+- [Trimming alignments using TrimAl](#trimming-alignments-using-trimal)
+- [Modify sequence names](#modify-sequence-names)
+- [IQ-TREE calculation of tree for concatenated
+  fasta](#iq-tree-calculation-of-tree-for-concatenated-fasta)
+  - [Testing script](#testing-script)
+  - [Running IQ-TREE on complete
+    data](#running-iq-tree-on-complete-data)
 
 # Introduction
 
-This RMarkdown file (or its markdown version for GitHub) documents calculation of phylogenomic tree of the species included in OrthoFinder, using the OrthoFinder orthogroups.
+This RMarkdown file (or its markdown version for GitHub) documents
+calculation of phylogenomic tree of the species included in OrthoFinder,
+using the OrthoFinder orthogroups.
 
-This file includes BASH code that I ran at MetaCentrum (Czech national grid infrastructure) running PBS scheduling system for batch jobs. The code was partly written by AI.
+This file includes BASH code that I ran at MetaCentrum (Czech national
+grid infrastructure) running PBS scheduling system for batch jobs. The
+code was partly written by AI.
 
 ## Strategy
 
-There are just 3 single copy orthogroups, which is a little data to calculate reliable tree. The reasons are probably polyploids like *Brassica napus* and *Camelina sativa* (see [Comparative_Genomics_Statistics_heatmaps](figs_and_stats/Comparative_Genomics_Statistics_heatmaps.pdf)). To get good data, I will use orthogroups with all species present and allow there several paralogs. This will be mostly very similar paralogs obtained recently by whole genome duplication or tandem duplication. I will randomly select one paralog per species that will be retained for the calculation of the tree.
+There are just 3 single copy orthogroups, which is a little data to
+calculate reliable tree. The reasons are probably polyploids like
+*Brassica napus* and *Camelina sativa* (see
+[Comparative_Genomics_Statistics_heatmaps](figs_and_stats/Comparative_Genomics_Statistics_heatmaps.pdf)).
+To get good data, I will use orthogroups with all species present and
+allow there several paralogs. This will be mostly very similar paralogs
+obtained recently by whole genome duplication or tandem duplication. I
+will randomly select one paralog per species that will be retained for
+the calculation of the tree.
 
 ## SW installation and versions
 
-The SW installation instructions and versions of SW used is described in [Installation_of_SW.md](Installation_of_SW.md).
-
+The SW installation instructions and versions of SW used is described in
+[Installation_of_SW.md](Installation_of_SW.md).
 
 # Data preparation
 
@@ -36,7 +56,7 @@ The SW installation instructions and versions of SW used is described in [Instal
 
 Just for orthogroups with all species present.
 
-```{sh}
+``` sh
 cd /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/
 mkdir phylo_tree
 cd /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree
@@ -65,41 +85,37 @@ sort -n |
 uniq -c
 ```
 
+          3 23
+         49 24
+        311 25
+       1392 26
+       1327 27
+        887 28
+        594 29
+        633 30
+        820 31
+        855 32
+        654 33
+        414 34
+        304 35
+        288 36
+        298 37
+        220 38
+        153 39
+        124 40
+         98 41
+         76 42
+         74 43
+         68 44
+         63 45
+         73 46
+         75 47
+         62 48
+         71 49
+        105 50
+        ... (not full result)
 
-```
-      3 23
-     49 24
-    311 25
-   1392 26
-   1327 27
-    887 28
-    594 29
-    633 30
-    820 31
-    855 32
-    654 33
-    414 34
-    304 35
-    288 36
-    298 37
-    220 38
-    153 39
-    124 40
-     98 41
-     76 42
-     74 43
-     68 44
-     63 45
-     73 46
-     75 47
-     62 48
-     71 49
-    105 50
-    ... (not full result)
-```
-
-
-```{sh}
+``` sh
 GENECOUNT="../orthofinder_results/Results_brassicaceae_3/Orthogroups/Orthogroups.GeneCount.tsv"
 MAX_GENES=30
 
@@ -170,25 +186,23 @@ echo
 echo "Output files:"
 echo "  ${OUT_PREFIX}.tsv"
 echo "  ${OUT_PREFIX}.ids.txt"
-
 ```
 
-```
-Number of species detected:     23
+    Number of species detected:     23
 
-Summary:
-Complete orthogroups (all species present):     11890
-Complete orthogroups with <=    30      genes:  5196
+    Summary:
+    Complete orthogroups (all species present):     11890
+    Complete orthogroups with <=    30      genes:  5196
 
-Output files:
-  input_orthogroups/complete_orthogroups_max30.tsv
-  input_orthogroups/complete_orthogroups_max30.ids.txt
-```
+    Output files:
+      input_orthogroups/complete_orthogroups_max30.tsv
+      input_orthogroups/complete_orthogroups_max30.ids.txt
 
 ## Add species names to protein names in fasta files before alignment
 
 Just for orthogroups that will be used for alignment.
-```{sh}
+
+``` sh
 cd /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree
 
 
@@ -385,9 +399,15 @@ echo "  $OUTPUT_DIR"
 
 ## Select random sequence for each species in each orthogroup
 
-In this step I will get single-copy orthologues. Foer each species, if there are several paralogs, one will be selected randomly. This shouldn't be making much bias, because I selected orthogroups with only few paralogs (at least one sequence for each of 23 species and maximally 30 sequences). Most of the paralogs are probably duplications within species or copies from different ancestors in allopolyploids like *Brassica napus*.
+In this step I will get single-copy orthologues. Foer each species, if
+there are several paralogs, one will be selected randomly. This
+shouldn’t be making much bias, because I selected orthogroups with only
+few paralogs (at least one sequence for each of 23 species and maximally
+30 sequences). Most of the paralogs are probably duplications within
+species or copies from different ancestors in allopolyploids like
+*Brassica napus*.
 
-```{sh}
+``` sh
 cd /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree
 
 
@@ -491,7 +511,7 @@ echo "  $OUTPUT_DIR"
 
 ### Checking results
 
-```{sh}
+``` sh
 ls $INPUT_DIR | wc -l
 ls $OUTPUT_DIR | wc -l
 
@@ -502,13 +522,11 @@ grep '>' $OUTPUT_DIR/OG0018051.fa | sort
 grep '>' $INPUT_DIR/OG0009637.fa | sort
 echo ""
 grep '>' $OUTPUT_DIR/OG0009637.fa | sort
-
 ```
-
 
 # MAFFT alignment of orthogroups
 
-```{sh}
+``` sh
 ### Metacentrum script
 
 #!/bin/bash
@@ -631,7 +649,7 @@ clean_scratch
 # With 16 CPUs: Just 6,5 min, 0,67 GB memory, 83 % CPU
 ```
 
-```{sh}
+``` sh
 cd /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/metacentrum_scripts
 qsub mafft_orthogroups.bash
 ```
@@ -640,9 +658,10 @@ qsub mafft_orthogroups.bash
 
 Trim parts of alignments with low informative value.
 
-It takes just few minutes with 1 CPU, so it is not really needed to submit it as a job. The best would be ineractive job.
+It takes just few minutes with 1 CPU, so it is not really needed to
+submit it as a job. The best would be ineractive job.
 
-```{sh}
+``` sh
 
 ############################
 # User-defined variables
@@ -743,9 +762,10 @@ echo "End time:           $(date "+%Y-%m-%d %H:%M:%S")"
 
 # Modify sequence names
 
-Leave just species in sequence names, otherwise it will not be well concatenated by IQ-TREE.
- 
-```{sh}
+Leave just species in sequence names, otherwise it will not be well
+concatenated by IQ-TREE.
+
+``` sh
 cd /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/phylo_tree/trimmed_alignments
 
 mkdir -p ../trimmed_alignments_2
@@ -753,17 +773,13 @@ mkdir -p ../trimmed_alignments_2
 for f in *.trim.fa; do
     sed -E 's/^>([^|]+)\|.*/>\1/' "$f" > "../trimmed_alignments_2/${f%.trim.fa}.species.trim.fa"
 done
-
 ```
- 
-
-
 
 # IQ-TREE calculation of tree for concatenated fasta
 
 ## Testing script
 
-```{sh}
+``` sh
 ### Metacentrum script
 
 #!/bin/bash
@@ -863,14 +879,14 @@ clean_scratch
 # With 32 CPUs: 15 min, 0,27 GB memory, 14 % CPU
 ```
 
-```{sh}
+``` sh
 cd /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/metacentrum_scripts
 qsub iqtree_species_tree_test_2.bash
 ```
 
 ## Running IQ-TREE on complete data
 
-```{sh}
+``` sh
 ### Metacentrum script
 
 #!/bin/bash
@@ -978,10 +994,7 @@ clean_scratch
 # With 32 CPUs: 31 h, 66 GB memory, 55 % CPU
 ```
 
-```{sh}
+``` sh
 cd /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/metacentrum_scripts
 qsub iqtree_species_tree.bash
 ```
-
-
-
