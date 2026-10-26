@@ -1,0 +1,125 @@
+#NEXUS
+begin taxa;
+	dimensions ntax=23;
+	taxlabels
+	Aethionema_saxatile
+	Alyssum_gmelinii
+	Arabidopsis_arenosa
+	Arabidopsis_lyrata_NCBI
+	Arabidopsis_lyrata_Rawat
+	Arabidopsis_thaliana
+	Arabis_alpina
+	Brassica_napus
+	Brassica_oleracea
+	Brassica_rapa
+	Camelina_sativa
+	Capsella_rubella
+	Cardamine_amara
+	Cardamine_glauca
+	Cardamine_hirsuta
+	Cochlearia_excelsa
+	Conringia_planisiliqua
+	Erysimum_linariifolium
+	Euclidium_syriacum
+	Eutrema_salsugineum
+	Noccaea_praecox
+	Odontarrhena_muralis
+	Raphanus_sativus
+;
+end;
+
+begin trees;
+	tree tree_1 = [&R] (Cardamine_hirsuta[&!rotate=false]:0.031255,(((((Camelina_sativa[&!rotate=false]:0.040036,Capsella_rubella[&!rotate=false]:0.037967)[&label="100/100",!rotate=false]:0.017619,(((Arabidopsis_lyrata_Rawat[&!rotate=false]:9.8E-4,Arabidopsis_lyrata_NCBI[&!rotate=false]:4.36E-4)[&label="100/100",!rotate=false]:0.012961,Arabidopsis_arenosa[&!rotate=false]:0.013329)[&label="100/100",!rotate=false]:0.010003,Arabidopsis_thaliana[&!rotate=false]:0.031279)[&label="100/100",!rotate=false]:0.01649)[&label="100/100",!rotate=false]:0.006536,Erysimum_linariifolium[&!rotate=false]:0.041213)[&label="100/100",!rotate=false]:0.013355,((((Alyssum_gmelinii[&!rotate=false]:0.071738,Odontarrhena_muralis[&!rotate=false]:0.053394)[&label="100/100",!rotate=false]:0.043872,Arabis_alpina[&!rotate=false]:0.08086)[&label="100/100",!rotate=false]:0.010404,((((Conringia_planisiliqua[&!rotate=false]:0.040895,(((Brassica_rapa[&!rotate=false]:0.016992,Brassica_napus[&!rotate=false]:0.007748)[&label="100/100",!rotate=false]:0.007234,Brassica_oleracea[&!rotate=false]:0.015491)[&label="100/100",!rotate=false]:0.022384,Raphanus_sativus[&!rotate=false]:0.042407)[&label="100/100",!rotate=false]:0.045308)[&label="100/100",!rotate=true]:0.017518,Eutrema_salsugineum[&!rotate=false]:0.05445)[&label="100/100",!rotate=false]:0.006135,Noccaea_praecox[&!rotate=false]:0.069362)[&label="100/100",!rotate=false]:0.004345,Cochlearia_excelsa[&!rotate=false]:0.130988)[&label="100/100",!rotate=false]:0.006482)[&label="100/100",!rotate=true]:0.004831,(Aethionema_saxatile[&!rotate=true]:0.168601,Euclidium_syriacum[&!rotate=true]:0.092266)[&label="100/100",!rotate=true]:0.010445)[&label="100/100",!rotate=false]:0.016964)[&label="100/100",!rotate=false]:0.028773,Cardamine_glauca[&!rotate=false]:0.03091)[&label="100/100",!rotate=false]:0.012804,Cardamine_amara[&!rotate=false]:0.020432);
+end;
+
+begin figtree;
+	set appearance.backgroundColorAttribute="Default";
+	set appearance.backgroundColour=#ffffff;
+	set appearance.branchColorAttribute="User selection";
+	set appearance.branchColorGradient=false;
+	set appearance.branchLineWidth=1.0;
+	set appearance.branchMinLineWidth=0.0;
+	set appearance.branchWidthAttribute="Fixed";
+	set appearance.foregroundColour=#000000;
+	set appearance.hilightingGradient=false;
+	set appearance.selectionColour=#2d3680;
+	set branchLabels.colorAttribute="User selection";
+	set branchLabels.displayAttribute="label";
+	set branchLabels.fontName="sansserif";
+	set branchLabels.fontSize=8;
+	set branchLabels.fontStyle=0;
+	set branchLabels.isShown=false;
+	set branchLabels.significantDigits=4;
+	set layout.expansion=0;
+	set layout.layoutType="RECTILINEAR";
+	set layout.zoom=0;
+	set legend.attribute="label";
+	set legend.fontSize=10.0;
+	set legend.isShown=false;
+	set legend.significantDigits=4;
+	set nodeBars.barWidth=4.0;
+	set nodeBars.displayAttribute=null;
+	set nodeBars.isShown=false;
+	set nodeLabels.colorAttribute="User selection";
+	set nodeLabels.displayAttribute="label";
+	set nodeLabels.fontName="sansserif";
+	set nodeLabels.fontSize=12;
+	set nodeLabels.fontStyle=0;
+	set nodeLabels.isShown=true;
+	set nodeLabels.significantDigits=4;
+	set nodeShapeExternal.colourAttribute="User selection";
+	set nodeShapeExternal.isShown=false;
+	set nodeShapeExternal.minSize=10.0;
+	set nodeShapeExternal.scaleType=Width;
+	set nodeShapeExternal.shapeType=Circle;
+	set nodeShapeExternal.size=4.0;
+	set nodeShapeExternal.sizeAttribute="Fixed";
+	set nodeShapeInternal.colourAttribute="User selection";
+	set nodeShapeInternal.isShown=false;
+	set nodeShapeInternal.minSize=10.0;
+	set nodeShapeInternal.scaleType=Width;
+	set nodeShapeInternal.shapeType=Circle;
+	set nodeShapeInternal.size=4.0;
+	set nodeShapeInternal.sizeAttribute="Fixed";
+	set polarLayout.alignTipLabels=false;
+	set polarLayout.angularRange=0;
+	set polarLayout.rootAngle=0;
+	set polarLayout.rootLength=100;
+	set polarLayout.showRoot=true;
+	set radialLayout.spread=0.0;
+	set rectilinearLayout.alignTipLabels=false;
+	set rectilinearLayout.curvature=0;
+	set rectilinearLayout.rootLength=100;
+	set scale.offsetAge=0.0;
+	set scale.rootAge=1.0;
+	set scale.scaleFactor=1.0;
+	set scale.scaleRoot=false;
+	set scaleAxis.automaticScale=true;
+	set scaleAxis.fontSize=8.0;
+	set scaleAxis.isShown=false;
+	set scaleAxis.lineWidth=1.0;
+	set scaleAxis.majorTicks=1.0;
+	set scaleAxis.minorTicks=0.5;
+	set scaleAxis.origin=0.0;
+	set scaleAxis.reverseAxis=false;
+	set scaleAxis.showGrid=true;
+	set scaleBar.automaticScale=true;
+	set scaleBar.fontSize=10.0;
+	set scaleBar.isShown=true;
+	set scaleBar.lineWidth=1.0;
+	set scaleBar.scaleRange=0.0;
+	set tipLabels.colorAttribute="User selection";
+	set tipLabels.displayAttribute="Names";
+	set tipLabels.fontName="Arial";
+	set tipLabels.fontSize=18;
+	set tipLabels.fontStyle=2;
+	set tipLabels.isShown=true;
+	set tipLabels.significantDigits=4;
+	set trees.order=false;
+	set trees.orderType="increasing";
+	set trees.rooting=true;
+	set trees.rootingType="Midpoint";
+	set trees.transform=false;
+	set trees.transformType="cladogram";
+end;
+

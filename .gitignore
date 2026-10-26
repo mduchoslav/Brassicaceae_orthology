@@ -4,3 +4,7 @@ functional_annotation/logs/
 interproscan/
 blast_results/
 .Rhistory
+phylo_tree/iqtree_species_tree/tree_figure_modifications/
+phylo_tree/iqtree_species_tree_test/
+phylo_tree/iqtree_species_tree_test_2/
+phylo_tree/orthosnap_testing/
