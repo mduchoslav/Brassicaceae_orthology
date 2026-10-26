@@ -22,6 +22,7 @@ Miloš Duchoslav
   - [Testing script](#testing-script)
   - [Running IQ-TREE on complete
     data](#running-iq-tree-on-complete-data)
+- [Results](#results)
 
 # Introduction
 
@@ -998,3 +999,16 @@ clean_scratch
 cd /storage/brno12-cerit/home/duchmil/Brassicaceae_orthology/brassicaceae_3/metacentrum_scripts
 qsub iqtree_species_tree.bash
 ```
+
+# Results
+
+The resulting ML tree is in the file
+[brassicaceae_species_tree.treefile](phylo_tree/iqtree_species_tree/brassicaceae_species_tree.treefile).
+Using FigTree, I rooted it to *Aethionema*, rotated some branches and
+exported [the tree as
+svg](phylo_tree/iqtree_species_tree/brassicaceae_species_tree_mod2b.treefile.svg).
+For publication, I removed underscores in names and highlighted species
+assebled by us using Inkscape - [here is the final version in
+svg](phylo_tree/iqtree_species_tree/brassicaceae_species_tree_mod2b_mod.treefile.svg)
+or
+[pdf](phylo_tree/iqtree_species_tree/brassicaceae_species_tree_mod2b_mod.treefile.pdf).
