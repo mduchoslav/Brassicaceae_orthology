@@ -12,7 +12,7 @@ Miloš Duchoslav
 - [Scripts and detailed description of methods](#Scripts-and-detailed-description-of-methods)
 - [Intermediate results](#Intermediate-results)
 - [Final results](#Final-results)
-- [Additional results - statistics and phylogenomic tree](Additional-results---statistics-and-phylogenomic-tree)
+- [Additional results - statistics and phylogenomic tree](#Additional-results---statistics-and-phylogenomic-tree)
 
 ## Introduction
 
@@ -149,7 +149,7 @@ I use for documentation RMarkdown combining snippets of R code and Bash code. Th
 
 Other intermediate results are not included as they are either not useful or they are too big (like the BLAST results or InterProScan results).
 
-## Final results - tables
+## Final results
 
 The main results are tables (for each species except *A. thaliana*) with information for each gene including
 
