@@ -664,14 +664,20 @@ for(one.species in species) {
   stats.ortho[7, one.species] <- sum(!is.na(ortho.big.5$Arabidopsis_thaliana))
   
   # 5. if missing, use genes hits from simple Blast (but only those with BLAST_pident > 40 & BLAST_qcovhsp > 50)
-  ortho.big.5$Arabidopsis_thaliana[is.na(ortho.big.5$Arabidopsis_thaliana) & 
-  																 	ortho.big.5$BLAST_pident > 40 & 
-  																 	ortho.big.5$BLAST_qcovhsp > 50 &
-  																 	!is.na(ortho.big.5$BLAST_saccver)] <- 
-  	ortho.big.5$BLAST_saccver[is.na(ortho.big.5$Arabidopsis_thaliana) &
-  															ortho.big.5$BLAST_pident > 40 & 
-  															ortho.big.5$BLAST_qcovhsp > 50 &
-  															!is.na(ortho.big.5$BLAST_saccver)] 
+  # BLAST_pident and BLAST_qcovhsp are saved as text and sometimes there are multiple values from several best hits merged to one.
+  # This is a function that will changed them to "numeric" and calculate mean if there are several values.
+  use.mean <- function(x, split = ", ") {
+  	sapply(X = strsplit(x, split = split), FUN = function(x) {mean(as.numeric(x))})
+  }
+  # get the genes
+  ortho.big.5a$Arabidopsis_thaliana[is.na(ortho.big.5a$Arabidopsis_thaliana) & 
+  																		use.mean(ortho.big.5a$BLAST_pident) > 40 & 
+  																		use.mean(ortho.big.5a$BLAST_qcovhsp) > 50 &
+  																		!is.na(ortho.big.5a$BLAST_saccver)] <- 
+  	ortho.big.5a$BLAST_saccver[is.na(ortho.big.5a$Arabidopsis_thaliana) &
+  														 	use.mean(ortho.big.5a$BLAST_pident) > 40 & 
+  														 	use.mean(ortho.big.5a$BLAST_qcovhsp) > 50 &
+  														 	!is.na(ortho.big.5a$BLAST_saccver)] 
   
   # call other homologues than Orthofinder orthologue table orthologues as "other"
   ortho.big.5$homologue_type[is.na(ortho.big.5$homologue_type) & !is.na(ortho.big.5$Arabidopsis_thaliana)] <- "other"
@@ -711,7 +717,7 @@ for(one.species in species) {
   		# If the orthologues are missing among BLAST hits, print warning.
   		if(nrow(sub.blast) == 0) {
   			print(paste0(gene.row[, one.species, with = F], ": Missing orthologue among BLAST hits"))
-  			s.orth <- NA
+  			s.ortho <- NA
   		} else {
   			# Else take the hit with the highest bitscore. If several have the highest, it will take the first.
   			s.ortho <- sub.blast$saccver[sub.blast$bitscore == max(sub.blast$bitscore)][1]
