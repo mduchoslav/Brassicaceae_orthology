@@ -20,7 +20,7 @@ The purpose of this project is to obtain gene orthology relationships between se
 
 ## Version history
 
-[Version 3.1](https://github.com/mduchoslav/Brassicaceae_orthology/tree/3.1) (2026-10)
+[Version 3.1](https://github.com/mduchoslav/Brassicaceae_orthology/tree/3.1) (2026-10) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23692058.svg)](https://doi.org/10.5281/zenodo.23692058)
 
 - Minor changes for paper revision
   - Added script for calculation of phylogenomic tree using OrthoFinder orthogroups.
